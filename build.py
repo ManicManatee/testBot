@@ -94,8 +94,11 @@ def main() -> None:
     if not exe_path.exists():
         sys.exit("ERROR: PyInstaller finished but exe not found — check output above.")
 
-    print(f"\n✓  Bot exe:             {exe_path}")
-    print(f"   Capture-templates:  {exe_path.parent / 'capture_templates.exe'}")
+    dist = exe_path.parent
+    print(f"\n✓  GUI launcher:       {dist / 'EvonyBot.exe'}")
+    print(f"   CLI bot:            {exe_path}")
+    print(f"   Capture-templates:  {dist / 'capture_templates.exe'}")
+    print(f"\n   → Double-click EvonyBot.exe to open the management GUI.")
 
     # ── Step 3: installer (optional) ──────────────────────────────────────
     if not args.installer:

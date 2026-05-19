@@ -1,8 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
 #
-# PyInstaller spec — builds two console executables:
-#   dist/evony_bot/evony_bot.exe          (the main bot)
-#   dist/evony_bot/capture_templates.exe  (one-time template capture tool)
+# PyInstaller spec — builds three executables into one shared dist/ folder:
+#   dist/evony_bot/EvonyBot.exe            (GUI manager  — launch this)
+#   dist/evony_bot/evony_bot.exe           (CLI bot, also used by the GUI)
+#   dist/evony_bot/capture_templates.exe   (one-time template capture tool)
 #
 # Build with:  python build.py
 #          or: pyinstaller evony_bot.spec
@@ -31,12 +32,18 @@ _hidden = [
     "numpy",
     "numpy.core._methods",
     "numpy.lib.format",
+    # CustomTkinter — needs its theme data files bundled
+    "customtkinter",
 ]
+
+from PyInstaller.utils.hooks import collect_data_files as _cdf
+# CustomTkinter ships theme JSON files that must be bundled alongside the exe
+_ctk_datas = _cdf("customtkinter", include_py_files=False)
 
 _datas = [
     ("config.yaml",  "."),          # default config next to exe
     ("templates",    "templates"),  # empty template dirs (user fills these in)
-]
+] + _ctk_datas
 
 # ── Main bot ──────────────────────────────────────────────────────────────
 
@@ -106,11 +113,48 @@ exe_capture = EXE(
     icon=None,
 )
 
+# ── GUI manager ───────────────────────────────────────────────────────────
+
+c = Analysis(
+    ["gui.py"],
+    pathex=[],
+    binaries=[],
+    datas=_datas,
+    hiddenimports=_hidden,
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=["matplotlib", "scipy", "pandas"],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
+    noarchive=False,
+)
+
+pyz_c = PYZ(c.pure, c.zipped_data, cipher=block_cipher)
+
+exe_gui = EXE(
+    pyz_c,
+    c.scripts,
+    [],
+    exclude_binaries=True,
+    name="EvonyBot",           # The main launcher users double-click
+    debug=False,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=True,
+    console=False,             # No console window for the GUI
+    icon=None,
+)
+
 # ── Combined output directory ─────────────────────────────────────────────
-# Both exes share the same dist/evony_bot/ folder so they share DLLs
-# and the config / templates directories.
+# All three exes share dist/evony_bot/ so they share DLLs, config, templates.
 
 coll = COLLECT(
+    exe_gui,
+    c.binaries,
+    c.zipfiles,
+    c.datas,
     exe_main,
     a.binaries,
     a.zipfiles,

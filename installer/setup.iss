@@ -58,24 +58,19 @@ Name: "{app}\logs"
 
 [Icons]
 ; Start Menu
-Name: "{group}\Evony Bot (Run)";              Filename: "{app}\evony_bot.exe"
+Name: "{group}\Evony Bot";                     Filename: "{app}\EvonyBot.exe"
 Name: "{group}\Evony Bot (Capture Templates)"; Filename: "{app}\capture_templates.exe"
+Name: "{group}\Evony Bot (CLI)";               Filename: "{app}\evony_bot.exe"
 Name: "{group}\Edit Config";                   Filename: "{win}\notepad.exe"; Parameters: """{app}\config.yaml"""
 Name: "{group}\{cm:UninstallProgram,Evony Bot}"; Filename: "{uninstallexe}"
 
-; Optional desktop icon
-Name: "{autodesktop}\Evony Bot"; Filename: "{app}\evony_bot.exe"; Tasks: desktopicon
+; Optional desktop icon — points to the GUI
+Name: "{autodesktop}\Evony Bot"; Filename: "{app}\EvonyBot.exe"; Tasks: desktopicon
 
 [Run]
-; Offer to open config after install
-Filename: "{win}\notepad.exe"; \
-    Parameters: """{app}\config.yaml"""; \
-    Description: "Review config.yaml (set your emulator ADB address)"; \
-    Flags: postinstall shellexec skipifsilent unchecked
-
-; Offer to run the template capture tool
-Filename: "{app}\capture_templates.exe"; \
-    Description: "Capture UI templates now (required before running the bot)"; \
+; Offer to launch the GUI after install
+Filename: "{app}\EvonyBot.exe"; \
+    Description: "Launch Evony Bot Manager (GUI)"; \
     Flags: postinstall nowait skipifsilent unchecked
 
 [UninstallDelete]
