@@ -15,6 +15,12 @@ import signal
 import sys
 import time
 
+# When running as a PyInstaller-frozen exe, make all relative paths resolve
+# from the directory that contains the executable instead of wherever the
+# user launched it from.
+if getattr(sys, "frozen", False):
+    os.chdir(os.path.dirname(sys.executable))
+
 import yaml
 
 from bot.adb_controller import ADBController

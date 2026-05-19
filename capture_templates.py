@@ -22,6 +22,9 @@ import os
 import subprocess
 import sys
 
+if getattr(sys, "frozen", False):
+    os.chdir(os.path.dirname(sys.executable))
+
 try:
     from PIL import Image
 except ImportError:

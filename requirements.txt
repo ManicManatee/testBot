@@ -3,3 +3,6 @@ Pillow>=10.0.0
 numpy>=1.24.0
 PyYAML>=6.0
 pytesseract>=0.3.10
+
+# Build tools (only needed to package the bot as a Windows exe / installer)
+pyinstaller>=6.0
