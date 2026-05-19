@@ -1,0 +1,60 @@
+# ─────────────────────────────────────────────
+#  Evony Bot Configuration
+# ─────────────────────────────────────────────
+
+# ADB device address
+# Common emulator defaults:
+#   BlueStacks 5:  127.0.0.1:5555  (or 5565 for 2nd instance)
+#   LDPlayer:      127.0.0.1:5554
+#   MuMu Player:   127.0.0.1:7555
+#   NoxPlayer:     127.0.0.1:62001
+adb:
+  device: "127.0.0.1:5555"
+
+# ─── Shield Manager ───────────────────────────
+shield:
+  enabled: true
+  check_interval_minutes: 15       # How often to check shield status
+  refresh_threshold_minutes: 60    # Renew when less than this many minutes remain
+  preferred_shields:               # Try these in order
+    - "8h"
+    - "24h"
+    - "3d"
+
+# ─── Rally Joiner ─────────────────────────────
+rally_joiner:
+  enabled: true
+  check_interval_seconds: 10       # How often to scan for rally invites
+  march_preset: "preset_1"         # preset_1 … preset_5
+  filters:
+    min_monster_level: 1
+    max_monster_level: 5
+    monster_types:
+      - "all"                      # "all" = any type; or list specific names
+
+# ─── Rally Starter ────────────────────────────
+rally_starter:
+  enabled: true
+  march_preset: "preset_1"
+  rally_time_minutes: 10           # How long to keep the rally open
+  auto_target_from_scanner: true   # Use monsters found by the scanner
+  troop_config:
+    use_preset: true
+    preset_number: 1
+
+# ─── Monster Scanner ──────────────────────────
+monster_scanner:
+  enabled: true
+  scan_interval_minutes: 30        # How often to scan the world map
+  auto_share: true                 # Post finds to alliance chat
+  min_level: 1
+  max_level: 5
+  target_types:
+    - "all"
+  max_share_per_scan: 5
+
+# ─── Logging ──────────────────────────────────
+logging:
+  level: "INFO"                    # DEBUG | INFO | WARNING | ERROR
+  log_file: "logs/evony_bot.log"
+  max_file_size_mb: 10
