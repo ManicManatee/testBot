@@ -73,14 +73,21 @@ TEMPLATES = [
     ("shield_item_3d",          "shields",  "The '3 Day Truce Agreement' item icon (blue/purple gem icon) in the Use Item panel"),
     ("shield_item_7d",          "shields",  "The '7 Day Truce Agreement' item icon (white/dove icon) in the Use Item panel"),
 
+    # ── Alliance War / Monster War ────────────────────────────────────────────
+    ("alliance_war_button",     "ui",       "The Alliance War button on the city screen (sword/shield icon) that opens the Alliance War panel"),
+    ("monster_war_tab",         "ui",       "The 'Monster War' sub-tab inside the Alliance War panel — tap this to see monster rally cards"),
+
     # ── Rally ─────────────────────────────────────────────────────────────────
-    ("rally_join_button",       "rally",    "The 'Join' button that appears on rally invites in alliance chat or notifications"),
+    ("rally_join_button",       "rally",    "The active 'Join' button on a Monster War rally card — NOT the greyed-out 'Joined' state"),
     ("rally_button",            "rally",    "The 'Rally' option in the action menu that pops up when you tap a monster on the map"),
     ("rally_launch_button",     "rally",    "The 'Launch' or 'Start' button that sends the rally — final confirmation step"),
     ("rally_timer_field",       "rally",    "The timer input box on the rally setup screen (how many minutes to keep the rally open)"),
-    ("march_preset_button",     "rally",    "Any one march-preset slot button (the numbered preset tabs in the march setup screen)"),
-    ("march_preset_1",          "rally",    "March preset slot #1 specifically"),
-    ("march_confirm_button",    "rally",    "The 'March' or 'Confirm' button that dispatches your troops"),
+    ("march_preset_button",     "rally",    "Any one march-preset tab (labeled I–VIII) on the Select a Preset screen"),
+    ("march_preset_1",          "rally",    "March preset tab #1 (labeled 'I') specifically on the Select a Preset screen"),
+    ("march_confirm_button",    "rally",    "The 'March' button at the bottom of the Select a Preset / troop selection screen"),
+    ("troop_reset_button",      "rally",    "The 'Reset' button on the troop selection screen — zeros all troop counts at once"),
+    ("troop_plus_button",       "rally",    "The '+' button next to a troop type row — adds troops one at a time; capture just the + icon"),
+    ("troop_minus_button",      "rally",    "The '−' button next to a troop type row — removes troops; capture just the − icon"),
 
     # ── Monster icons (world map) ─────────────────────────────────────────────
     # Monsters appear as pink/red creature icons with a white dotted circular border.
