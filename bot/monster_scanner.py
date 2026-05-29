@@ -114,10 +114,11 @@ class MonsterScanner:
         level = monster.get("level", "?")
         coords = monster.get("coords")
 
+        # Match Evony's own share format: "shared Coordinates: Lv40 Name (X:636, Y:486)"
         if coords:
-            msg = f"{name} Lv.{level} @ ({coords[0]},{coords[1]}) — Auto Scout"
+            msg = f"[Scout] {name} Lv.{level}  X:{coords[0]} Y:{coords[1]}"
         else:
-            msg = f"{name} Lv.{level} spotted — Auto Scout"
+            msg = f"[Scout] {name} Lv.{level} — coordinates unknown"
 
         if not self.screen.tap_template("chat_input_field"):
             logger.warning("Chat input field not found")
@@ -148,7 +149,23 @@ class MonsterScanner:
 
 
 def _parse_coords(text: str) -> Optional[Tuple[int, int]]:
-    m = re.search(r"(\d+)\s*[,xX]\s*(\d+)", text)
+    """Parse map coordinates from Evony OCR text.
+
+    Handles all formats seen in the game:
+    - Bottom coordinate bar:  "X:0636 Y:0486"
+    - Info popup / chat:      "(636, 486)"
+    - Generic fallback:       "636x486"  or  "636, 486"
+    """
+    # Evony coordinate bar: X:NNNN Y:NNNN (leading zeros are fine)
+    m = re.search(r"X[:\s](\d+)\s+Y[:\s](\d+)", text, re.IGNORECASE)
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    # Parenthetical: (636, 486)
+    m = re.search(r"\(\s*(\d+)\s*,\s*(\d+)\s*\)", text)
+    if m:
+        return int(m.group(1)), int(m.group(2))
+    # Generic: 636x486 or 636, 486
+    m = re.search(r"(\d{3,4})\s*[,xX]\s*(\d{3,4})", text)
     if m:
         return int(m.group(1)), int(m.group(2))
     return None

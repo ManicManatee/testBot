@@ -11,15 +11,18 @@
 adb:
   device: "127.0.0.1:5555"
 
-# ─── Shield Manager ───────────────────────────
+# ─── Truce Agreement (Shield) Manager ────────
+# In-game name: "Truce Agreement"  (8 Hour / 24 Hour / 3 Day / 7 Day)
+# Timer is read from the Use Item panel: "Remaining Time: HH:MM:SS"
 shield:
   enabled: true
-  check_interval_minutes: 15       # How often to check shield status
+  check_interval_minutes: 15       # How often to check Truce Agreement status
   refresh_threshold_minutes: 60    # Renew when less than this many minutes remain
-  preferred_shields:               # Try these in order
+  preferred_shields:               # Try these in order (template names match shield_item_Xh / Xd)
     - "8h"
     - "24h"
     - "3d"
+    - "7d"
 
 # ─── Rally Joiner ─────────────────────────────
 rally_joiner:

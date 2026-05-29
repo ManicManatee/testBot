@@ -12,7 +12,7 @@ Evony Bot is a Windows automation tool for **Evony: The King's Return** that han
 
 | Feature | What it means in practice |
 |---|---|
-| **Shield Monitor** | Checks your shield timer and quietly uses a new one before enemies notice you're unprotected. Basically a babysitter for your city walls. |
+| **Truce Agreement Monitor** | Checks your Truce Agreement timer and quietly uses a new one before enemies notice you're unprotected. Basically a babysitter for your city walls. |
 | **Rally Joiner** | Spots monster rally invites in alliance chat and joins them automatically. You get the glory; the bot does the commute. |
 | **Rally Starter** | Finds monsters on the map and launches rally attacks with your configured troop preset. The bot has more initiative than most alliance members. |
 | **Monster Scanner** | Scans the world map, reads monster coordinates via OCR, and posts them to alliance chat. Your allies will think you never sleep. You won't correct them. |
@@ -116,14 +116,16 @@ The bot uses image recognition to find buttons and icons on screen. It needs ref
    - Save the cropped region as a template PNG
 4. Open `screenshot_preview.png` in any image viewer to find the coordinates
 
-### Templates You'll Need to Capture (~30 total)
+### Templates You'll Need to Capture (~31 total)
 
 | Category | Examples |
 |---|---|
-| **UI Navigation** | Shield icon, city button, world map button, alliance chat button, inventory button, close button |
-| **Shields** | 8h shield item, 24h shield item, 3-day shield item (in your inventory) |
-| **Rally** | Rally join button, rally attack button, march preset buttons, confirm button |
-| **Monsters** | Level 1–5 monster icons on the world map, monster info popup |
+| **UI Navigation** | City screen blue dome (active Truce), city button, world map button, alliance chat button, inventory button, close button |
+| **Truce Agreements** | 8h / 24h / 3-day / 7-day Truce Agreement item icons in the Use Item panel; the green "Use" button |
+| **Rally** | Rally join button, Rally option from monster menu, Launch button, march preset buttons, confirm button |
+| **Monsters** | Level 1–5 monster icons (pink/red creatures with white dotted ring), monster info popup |
+
+> **Evony terminology tip:** The game calls protection items **"Truce Agreements"** (8 Hour / 24 Hour / 3 Day / 7 Day). The timer is shown as `Remaining Time: HH:MM:SS` in the Use Item panel. The bot reads and parses this format automatically.
 
 > **Tip:** If a template isn't working well, just re-run the capture tool and choose to recapture that one item. The tool skips already-captured templates by default.
 
@@ -138,11 +140,12 @@ All settings live in `config.yaml` in the install folder. Edit it with any text 
 adb:
   device: "127.0.0.1:5555"   # ← change this to match your emulator
 
+# "Truce Agreement" in-game — timer is read as "Remaining Time: HH:MM:SS"
 shield:
   enabled: true
   check_interval_minutes: 15     # check every 15 minutes
-  refresh_threshold_minutes: 60  # use a new shield when < 1 hour remains
-  preferred_shields: [8h, 24h, 3d]  # try 8h first, then 24h, then 3d
+  refresh_threshold_minutes: 60  # use a new Truce Agreement when < 1 hour remains
+  preferred_shields: [8h, 24h, 3d, 7d]  # try 8h first, then 24h, then 3d, then 7d
 
 rally_joiner:
   enabled: true
@@ -259,8 +262,8 @@ A template PNG is missing. Re-run the capture tool and capture that element. The
 2. Check that your emulator's ADB address in `config.yaml` matches
 3. Enable DEBUG logging to see exactly what the bot is looking for
 
-**Shield manager doesn't trigger**
-It only activates when your city view is visible. If you're on the world map when the check runs, it navigates to the city first — make sure the `city_indicator` template is captured.
+**Truce Agreement manager doesn't trigger**
+The bot navigates to the city, then opens your inventory to read the `Remaining Time: HH:MM:SS` green bar. Make sure `shield_icon` (the blue dome), `inventory_button`, and the `shield_item_Xh/d` templates are all captured.
 
 **pip install failed during setup**
 Run it manually from the install folder:

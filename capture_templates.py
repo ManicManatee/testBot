@@ -35,56 +35,63 @@ except ImportError:
 # ─── Templates to capture ─────────────────────────────────────────────────────
 # (template_name, subdirectory, description of what to show in-game)
 TEMPLATES = [
-    # ── Screen indicators (used to detect which screen is active) ──
-    ("city_indicator",          "ui",       "Any element that ONLY appears on the main city screen"),
-    ("world_map_indicator",     "ui",       "Any element that ONLY appears on the world map"),
-    ("alliance_chat_header",    "ui",       "The header/title bar of the alliance chat panel"),
-    ("inventory_header",        "ui",       "The header/title of the inventory/items panel"),
-    ("rally_setup_header",      "ui",       "The header/title of the rally configuration screen"),
+    # ── Screen indicators ─────────────────────────────────────────────────────
+    # Capture a small, unique UI element that is ONLY visible on that screen.
+    # The bot uses these to detect which screen is currently showing.
+    ("city_indicator",          "ui",       "A small element ONLY on the city screen — e.g. the resource bar icons (gold/food) at the top"),
+    ("world_map_indicator",     "ui",       "A small element ONLY on the world map — e.g. the mini-map or coordinate bar (X:NNNN Y:NNNN) at the bottom"),
+    ("alliance_chat_header",    "ui",       "The 'Alliance' or chat panel title/header bar"),
+    ("inventory_header",        "ui",       "The 'Use Item' or inventory panel title — the gold/brown header bar at the top"),
+    ("rally_setup_header",      "ui",       "The title bar of the rally attack setup screen"),
 
-    # ── Navigation buttons ──
-    ("city_button",             "ui",       "Button to return to your city"),
-    ("world_map_button",        "ui",       "Button to open the world map"),
-    ("alliance_chat_button",    "ui",       "Button to open alliance chat"),
-    ("inventory_button",        "ui",       "Button to open inventory / items bag"),
-    ("close_button",            "ui",       "The × or close button used to dismiss most panels"),
-    ("confirm_button",          "ui",       "Generic OK / Confirm button"),
+    # ── Navigation buttons ────────────────────────────────────────────────────
+    ("city_button",             "ui",       "The button that returns you to your city (castle icon, usually bottom-left area)"),
+    ("world_map_button",        "ui",       "The World Map button — bottom-left of the city screen"),
+    ("alliance_chat_button",    "ui",       "The Alliance button — bottom-right of the main screen"),
+    ("inventory_button",        "ui",       "The Items / Inventory bag icon — opens the Use Item panel"),
+    ("close_button",            "ui",       "The × or back arrow used to close/dismiss panels"),
+    ("confirm_button",          "ui",       "Generic green OK / Confirm / Yes button"),
 
-    # ── Coordinate jump ──
-    ("goto_coords_button",      "ui",       "Button to jump to specific coordinates on the world map"),
-    ("coords_x_field",          "ui",       "The X coordinate text-input field"),
-    ("coords_y_field",          "ui",       "The Y coordinate text-input field"),
-    ("goto_confirm_button",     "ui",       "Confirm button after entering coordinates"),
+    # ── Coordinate jump (world map) ───────────────────────────────────────────
+    ("goto_coords_button",      "ui",       "The magnifying-glass or search icon to jump to specific coordinates on the world map"),
+    ("coords_x_field",          "ui",       "The X coordinate input field in the jump-to-coordinates dialog"),
+    ("coords_y_field",          "ui",       "The Y coordinate input field"),
+    ("goto_confirm_button",     "ui",       "The Go / Confirm button in the jump-to-coordinates dialog"),
 
-    # ── Alliance chat input ──
-    ("chat_input_field",        "ui",       "Text input area inside the alliance chat"),
-    ("chat_send_button",        "ui",       "Send / Post button in the alliance chat"),
+    # ── Alliance chat ─────────────────────────────────────────────────────────
+    ("chat_input_field",        "ui",       "The text input box at the bottom of the alliance chat"),
+    ("chat_send_button",        "ui",       "The Send button (paper-plane icon or 'Send' label) in alliance chat"),
 
-    # ── Shield ──
-    ("shield_icon",             "ui",       "The shield icon on the city screen (active, with timer)"),
-    ("shield_expired",          "ui",       "The shield icon when protection has expired (red / grey)"),
-    ("use_item_button",         "ui",       "The 'Use' button shown when selecting an item in inventory"),
-    ("shield_item_8h",          "shields",  "8-hour shield item tile inside the inventory"),
-    ("shield_item_24h",         "shields",  "24-hour shield item tile"),
-    ("shield_item_3d",          "shields",  "3-day shield item tile"),
+    # ── Truce Agreement (Shield) ──────────────────────────────────────────────
+    # In-game name: "Truce Agreement" — shown in Items > Use Item panel.
+    # The active truce appears as a blue translucent dome over your city.
+    ("shield_icon",             "ui",       "The blue translucent DOME over your city indicating an active Truce Agreement — capture this on the city screen"),
+    ("shield_expired",          "ui",       "Your city WITHOUT the blue dome (no active Truce Agreement) — capture the city screen when unprotected"),
+    ("use_item_button",         "ui",       "The green 'Use' button on the RIGHT side of each item row in the Use Item panel"),
+    ("shield_item_8h",          "shields",  "The '8 Hour Truce Agreement' item icon (purple gem icon) in the Use Item panel"),
+    ("shield_item_24h",         "shields",  "The '24 Hour Truce Agreement' item icon (orange/gold gem icon) in the Use Item panel"),
+    ("shield_item_3d",          "shields",  "The '3 Day Truce Agreement' item icon (blue/purple gem icon) in the Use Item panel"),
+    ("shield_item_7d",          "shields",  "The '7 Day Truce Agreement' item icon (white/dove icon) in the Use Item panel"),
 
-    # ── Rally ──
-    ("rally_join_button",       "rally",    "The 'Join' button on a rally invite (notifications or chat)"),
-    ("rally_button",            "rally",    "The 'Rally' option that appears when you tap a monster"),
-    ("rally_launch_button",     "rally",    "The Launch / Start button on the rally setup screen"),
-    ("rally_timer_field",       "rally",    "The timer input field on the rally setup screen"),
-    ("march_preset_button",     "rally",    "A single march-preset slot button (capture any one)"),
-    ("march_preset_1",          "rally",    "March preset #1 slot specifically"),
-    ("march_confirm_button",    "rally",    "Confirm / March button that sends your troops"),
+    # ── Rally ─────────────────────────────────────────────────────────────────
+    ("rally_join_button",       "rally",    "The 'Join' button that appears on rally invites in alliance chat or notifications"),
+    ("rally_button",            "rally",    "The 'Rally' option in the action menu that pops up when you tap a monster on the map"),
+    ("rally_launch_button",     "rally",    "The 'Launch' or 'Start' button that sends the rally — final confirmation step"),
+    ("rally_timer_field",       "rally",    "The timer input box on the rally setup screen (how many minutes to keep the rally open)"),
+    ("march_preset_button",     "rally",    "Any one march-preset slot button (the numbered preset tabs in the march setup screen)"),
+    ("march_preset_1",          "rally",    "March preset slot #1 specifically"),
+    ("march_confirm_button",    "rally",    "The 'March' or 'Confirm' button that dispatches your troops"),
 
-    # ── Monster icons (world map) ──
-    ("monster_level_1",         "monsters", "Level 1 monster icon on the world map"),
-    ("monster_level_2",         "monsters", "Level 2 monster icon on the world map"),
-    ("monster_level_3",         "monsters", "Level 3 monster icon on the world map"),
-    ("monster_level_4",         "monsters", "Level 4 monster icon on the world map"),
-    ("monster_level_5",         "monsters", "Level 5 monster icon on the world map"),
-    ("monster_generic",         "monsters", "Generic / fallback monster icon (any type or level)"),
-    ("monster_info_popup",      "monsters", "The info panel that opens when you tap a monster"),
+    # ── Monster icons (world map) ─────────────────────────────────────────────
+    # Monsters appear as pink/red creature icons with a white dotted circular border.
+    # Capture each level separately — their icon art is distinct.
+    ("monster_level_1",         "monsters", "Level 1 monster icon on the world map (small pink/red creature with white dotted ring)"),
+    ("monster_level_2",         "monsters", "Level 2 monster icon"),
+    ("monster_level_3",         "monsters", "Level 3 monster icon"),
+    ("monster_level_4",         "monsters", "Level 4 monster icon"),
+    ("monster_level_5",         "monsters", "Level 5 monster icon (noticeably larger than Lv1)"),
+    ("monster_generic",         "monsters", "Any monster icon — use this as a fallback if level-specific matching fails"),
+    ("monster_info_popup",      "monsters", "The popup card that appears when you tap a monster — shows its name, level, and coordinates"),
 ]
 
 
