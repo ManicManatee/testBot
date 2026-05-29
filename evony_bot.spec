@@ -1,170 +1,110 @@
 # -*- mode: python ; coding: utf-8 -*-
 #
-# PyInstaller spec — builds three executables into one shared dist/ folder:
-#   dist/evony_bot/EvonyBot.exe            (GUI manager  — launch this)
-#   dist/evony_bot/evony_bot.exe           (CLI bot, also used by the GUI)
-#   dist/evony_bot/capture_templates.exe   (one-time template capture tool)
+# PyInstaller spec (compatible with PyInstaller 6+)
+# Produces three executables in dist/evony_bot/:
 #
-# Build with:  python build.py
-#          or: pyinstaller evony_bot.spec
+#   EvonyBot.exe            — GUI manager  (users double-click this)
+#   evony_bot.exe           — headless CLI bot
+#   capture_templates.exe   — one-time template capture wizard
+#
+# Build:  python build.py
+#     or: pyinstaller evony_bot.spec --noconfirm
 
-from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
+from PyInstaller.utils.hooks import collect_data_files
 
-block_cipher = None
+# CustomTkinter ships theme / asset JSON files that must travel with the exe.
+_ctk_datas = collect_data_files("customtkinter", include_py_files=False)
 
-# ── Shared analysis settings ───────────────────────────────────────────────
+_shared_datas = [
+    ("config.yaml", "."),       # default config placed next to the exe
+    ("templates",   "templates"),  # empty subdirs; user fills these in
+] + _ctk_datas
 
 _hidden = [
-    # OpenCV needs these on some systems
-    "cv2",
-    "cv2.cv2",
-    # Pillow imaging formats
-    "PIL.Image",
-    "PIL.ImageOps",
-    "PIL.BmpImagePlugin",
-    "PIL.JpegImagePlugin",
-    "PIL.PngImagePlugin",
-    # pytesseract
+    # OpenCV
+    "cv2", "cv2.cv2",
+    # Pillow image plugins
+    "PIL.Image", "PIL.ImageOps",
+    "PIL.BmpImagePlugin", "PIL.JpegImagePlugin", "PIL.PngImagePlugin",
+    # Other runtime deps
     "pytesseract",
-    # PyYAML
     "yaml",
-    # numpy
-    "numpy",
-    "numpy.core._methods",
-    "numpy.lib.format",
-    # CustomTkinter — needs its theme data files bundled
+    "numpy", "numpy.core._methods", "numpy.lib.format",
+    # GUI
     "customtkinter",
 ]
 
-from PyInstaller.utils.hooks import collect_data_files as _cdf
-# CustomTkinter ships theme JSON files that must be bundled alongside the exe
-_ctk_datas = _cdf("customtkinter", include_py_files=False)
+_no_gui_excludes = ["tkinter", "matplotlib", "scipy", "pandas"]
+_gui_excludes    = [           "matplotlib", "scipy", "pandas"]
 
-_datas = [
-    ("config.yaml",  "."),          # default config next to exe
-    ("templates",    "templates"),  # empty template dirs (user fills these in)
-] + _ctk_datas
+# ── 1.  GUI Manager ───────────────────────────────────────────────────────────
 
-# ── Main bot ──────────────────────────────────────────────────────────────
-
-a = Analysis(
-    ["main.py"],
-    pathex=[],
-    binaries=[],
-    datas=_datas,
+gui = Analysis(
+    ["gui.py"],
+    datas=_shared_datas,
     hiddenimports=_hidden,
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=["tkinter", "matplotlib", "scipy", "pandas"],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
+    excludes=_gui_excludes,
 )
-
-pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
-
-exe_main = EXE(
-    pyz,
-    a.scripts,
-    [],
+pyz_gui = PYZ(gui.pure)
+exe_gui = EXE(
+    pyz_gui, gui.scripts, [],
     exclude_binaries=True,
-    name="evony_bot",
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
+    name="EvonyBot",
+    console=False,   # No black terminal window for the GUI
     upx=True,
-    console=True,   # keep console visible so log output is readable
+    debug=False,
+    strip=False,
     icon=None,
 )
 
-# ── Template capture tool ─────────────────────────────────────────────────
+# ── 2.  Headless CLI bot ──────────────────────────────────────────────────────
 
-b = Analysis(
-    ["capture_templates.py"],
-    pathex=[],
-    binaries=[],
-    datas=_datas,
+cli = Analysis(
+    ["main.py"],
+    datas=_shared_datas,
     hiddenimports=_hidden,
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=["tkinter", "matplotlib", "scipy", "pandas"],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
+    excludes=_no_gui_excludes,
+)
+pyz_cli = PYZ(cli.pure)
+exe_cli = EXE(
+    pyz_cli, cli.scripts, [],
+    exclude_binaries=True,
+    name="evony_bot",
+    console=True,
+    upx=True,
+    debug=False,
+    strip=False,
+    icon=None,
 )
 
-pyz_b = PYZ(b.pure, b.zipped_data, cipher=block_cipher)
+# ── 3.  Template capture wizard ───────────────────────────────────────────────
 
-exe_capture = EXE(
-    pyz_b,
-    b.scripts,
-    [],
+cap = Analysis(
+    ["capture_templates.py"],
+    datas=_shared_datas,
+    hiddenimports=_hidden,
+    excludes=_no_gui_excludes,
+)
+pyz_cap = PYZ(cap.pure)
+exe_cap = EXE(
+    pyz_cap, cap.scripts, [],
     exclude_binaries=True,
     name="capture_templates",
-    debug=False,
-    bootloader_ignore_signals=False,
-    strip=False,
-    upx=True,
     console=True,
-    icon=None,
-)
-
-# ── GUI manager ───────────────────────────────────────────────────────────
-
-c = Analysis(
-    ["gui.py"],
-    pathex=[],
-    binaries=[],
-    datas=_datas,
-    hiddenimports=_hidden,
-    hookspath=[],
-    hooksconfig={},
-    runtime_hooks=[],
-    excludes=["matplotlib", "scipy", "pandas"],
-    win_no_prefer_redirects=False,
-    win_private_assemblies=False,
-    cipher=block_cipher,
-    noarchive=False,
-)
-
-pyz_c = PYZ(c.pure, c.zipped_data, cipher=block_cipher)
-
-exe_gui = EXE(
-    pyz_c,
-    c.scripts,
-    [],
-    exclude_binaries=True,
-    name="EvonyBot",           # The main launcher users double-click
+    upx=True,
     debug=False,
-    bootloader_ignore_signals=False,
     strip=False,
-    upx=True,
-    console=False,             # No console window for the GUI
     icon=None,
 )
 
-# ── Combined output directory ─────────────────────────────────────────────
-# All three exes share dist/evony_bot/ so they share DLLs, config, templates.
+# ── Combined output directory ─────────────────────────────────────────────────
+# All three exes share dist/evony_bot/ — PyInstaller deduplicates shared DLLs.
 
-coll = COLLECT(
-    exe_gui,
-    c.binaries,
-    c.zipfiles,
-    c.datas,
-    exe_main,
-    a.binaries,
-    a.zipfiles,
-    a.datas,
-    exe_capture,
-    b.binaries,
-    b.zipfiles,
-    b.datas,
-    strip=False,
-    upx=True,
-    upx_exclude=[],
+COLLECT(
+    exe_gui,  gui.binaries,  gui.zipfiles,  gui.datas,
+    exe_cli,  cli.binaries,  cli.zipfiles,  cli.datas,
+    exe_cap,  cap.binaries,  cap.zipfiles,  cap.datas,
     name="evony_bot",
+    upx=True,
+    strip=False,
 )

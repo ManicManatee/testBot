@@ -88,7 +88,7 @@ def main() -> None:
     if not spec.exists():
         sys.exit("ERROR: evony_bot.spec not found. Run from the repo root.")
 
-    run([sys.executable, "-m", "PyInstaller", str(spec)])
+    run([sys.executable, "-m", "PyInstaller", str(spec), "--noconfirm"])
 
     exe_path = Path("dist") / "evony_bot" / "evony_bot.exe"
     if not exe_path.exists():
@@ -121,7 +121,9 @@ def main() -> None:
     Path("installer/output").mkdir(parents=True, exist_ok=True)
     run([str(iscc), str(iss_script)])
 
-    installer_out = Path("installer") / "output" / "EvonyBot_Setup_v1.0.0.exe"
+    # Filename may include a version stamp — find whatever was produced
+    outputs = list(Path("installer/output").glob("EvonyBot_Setup_*.exe"))
+    installer_out = outputs[0] if outputs else Path("installer/output/EvonyBot_Setup.exe")
     print(f"\n✓  Installer:  {installer_out}")
     print(
         "\nDistribute that single .exe file.\n"

@@ -1,0 +1,140 @@
+name: Build Windows Installer
+
+# ── Triggers ──────────────────────────────────────────────────────────────────
+on:
+  # Push a tag like v1.2.3 → automatic release
+  push:
+    tags:
+      - "v*"
+
+  # Manual build from the Actions tab (no tag required)
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version string to embed in the installer (e.g. 1.2.0)"
+        required: false
+        default: "1.0.0"
+      create_release:
+        description: "Create a GitHub Release after building?"
+        type: boolean
+        default: false
+
+# ── Build job ─────────────────────────────────────────────────────────────────
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write   # needed to create releases
+
+    steps:
+      # 1 ── Source
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2 ── Python
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install Python dependencies
+        run: pip install -r requirements.txt
+
+      # 3 ── Native tools
+      - name: Install UPX (exe compression)
+        run: choco install upx --yes --no-progress
+
+      - name: Install Inno Setup 6
+        run: choco install innosetup --yes --no-progress
+
+      # 4 ── Derive version string
+      #       Tag push  →  strip leading "v"  (v1.2.3 → 1.2.3)
+      #       Manual    →  use the input field
+      - name: Resolve version
+        id: ver
+        shell: pwsh
+        run: |
+          if ("${{ github.ref }}" -match "^refs/tags/v(.+)$") {
+            $v = $Matches[1]
+          } else {
+            $v = "${{ github.event.inputs.version }}"
+            if (-not $v) { $v = "1.0.0" }
+          }
+          echo "VERSION=$v" >> $env:GITHUB_OUTPUT
+          echo "Resolved version: $v"
+
+      # 5 ── Stamp the version into the Inno Setup script
+      - name: Stamp version into setup.iss
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.VERSION }}"
+          $iss = Get-Content installer\setup.iss -Raw
+          $iss = $iss -replace 'AppVersion=[\d.]+',       "AppVersion=$v"
+          $iss = $iss -replace 'AppVerName=Evony Bot [\d.]+', "AppVerName=Evony Bot $v"
+          $iss = $iss -replace 'OutputBaseFilename=EvonyBot_Setup_v[\d.]+', "OutputBaseFilename=EvonyBot_Setup_v$v"
+          Set-Content installer\setup.iss $iss -Encoding UTF8
+          echo "Stamped version $v into setup.iss"
+
+      # 6 ── PyInstaller → dist/evony_bot/
+      - name: Build executables with PyInstaller
+        run: python -m PyInstaller evony_bot.spec --noconfirm
+
+      - name: Verify PyInstaller output
+        shell: pwsh
+        run: |
+          $required = @("EvonyBot.exe", "evony_bot.exe", "capture_templates.exe")
+          foreach ($f in $required) {
+            $p = "dist\evony_bot\$f"
+            if (-not (Test-Path $p)) { throw "Missing: $p" }
+            echo "OK  $p"
+          }
+
+      # 7 ── Inno Setup → installer/output/EvonyBot_Setup_vX.Y.Z.exe
+      - name: Build Windows installer (Inno Setup)
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path installer\output | Out-Null
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          & $iscc installer\setup.iss
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed (exit $LASTEXITCODE)" }
+
+      - name: Locate installer file
+        id: find_installer
+        shell: pwsh
+        run: |
+          $f = Get-ChildItem -Path "installer\output\*.exe" | Select-Object -First 1
+          if (-not $f) { throw "No installer found in installer\output\" }
+          echo "PATH=$($f.FullName)" >> $env:GITHUB_OUTPUT
+          echo "NAME=$($f.Name)"    >> $env:GITHUB_OUTPUT
+          echo "Built: $($f.FullName)  ($([math]::Round($f.Length/1MB, 1)) MB)"
+
+      # 8 ── Upload artifact (always available in the Actions UI)
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: EvonyBot-Installer-v${{ steps.ver.outputs.VERSION }}
+          path: ${{ steps.find_installer.outputs.PATH }}
+          retention-days: 30
+          if-no-files-found: error
+
+      # 9 ── GitHub Release (tag push OR manual opt-in)
+      - name: Create GitHub Release
+        if: |
+          startsWith(github.ref, 'refs/tags/') ||
+          github.event.inputs.create_release == 'true'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $v   = "${{ steps.ver.outputs.VERSION }}"
+          $tag = if ("${{ github.ref }}" -match "^refs/tags/") { "${{ github.ref_name }}" } else { "v$v" }
+          $f   = "${{ steps.find_installer.outputs.PATH }}"
+
+          # Create tag if it doesn't already exist (manual dispatch case)
+          git tag $tag 2>$null
+
+          gh release create $tag $f `
+            --title "Evony Bot $v" `
+            --generate-notes `
+            --latest
