@@ -5,6 +5,12 @@ from typing import List, Optional
 
 logger = logging.getLogger(__name__)
 
+# Natural max level per type — default upper bound when no filter is set
+_TYPE_MAX: dict[str, int] = {
+    "regular": 23, "hydra": 6, "ymir": 6,
+    "cerberus": 5, "golem": 7, "witch": 7, "summoned": 99,
+}
+
 
 class RallyJoiner:
     """
@@ -35,26 +41,21 @@ class RallyJoiner:
             self.nav.close_panel()
             return False
 
-        filters = self.cfg.get("filters", {})
-        min_lvl = filters.get("min_monster_level", 1)
-        max_lvl = filters.get("max_monster_level", 5)
-        allowed_types = filters.get("monster_types", ["all"])
-
         joined_any = False
         for match in join_buttons:
             x, y, w, h, _ = match
 
-            level = self._read_nearby_level(x, y, shot)
-            if level is not None and not (min_lvl <= level <= max_lvl):
-                logger.info("Skipping rally: level %d outside filter %d–%d", level, min_lvl, max_lvl)
+            nearby = self.screen.read_text_region(
+                (max(0, x - 300), max(0, y - 80), 400, 160), shot
+            )
+            level = _extract_level(nearby)
+            mtype = _classify_type(nearby)
+
+            if not self._passes_filter(mtype, level):
+                logger.info("Skipping rally: %s Lv.%s filtered out", mtype, level)
                 continue
 
-            mtype = self._read_nearby_type(x, y, shot)
-            if "all" not in allowed_types and mtype and mtype.lower() not in [t.lower() for t in allowed_types]:
-                logger.info("Skipping rally: type '%s' not in filter", mtype)
-                continue
-
-            logger.info("Joining rally (level=%s type=%s)", level, mtype)
+            logger.info("Joining rally (type=%s level=%s)", mtype, level)
             self.adb.tap(x + w // 2, y + h // 2)
             time.sleep(1.5)
 
@@ -173,14 +174,34 @@ class RallyJoiner:
                 self.adb.tap(bx + bw // 2, by + bh // 2)
                 time.sleep(0.04)
 
-    def _read_nearby_level(self, x: int, y: int, shot) -> Optional[int]:
-        region = (max(0, x - 220), max(0, y - 60), 220, 120)
-        text = self.screen.read_text_region(region, shot)
-        return _extract_level(text)
+    def _passes_filter(self, mtype: str, level: Optional[int]) -> bool:
+        tf = self.cfg.get("filters", {}).get(mtype, {})
+        if not tf.get("enabled", True):
+            return False
+        if level is not None:
+            min_lvl = tf.get("min_level", 1)
+            max_lvl = tf.get("max_level", _TYPE_MAX.get(mtype, 99))
+            if not (min_lvl <= level <= max_lvl):
+                return False
+        return True
 
-    def _read_nearby_type(self, x: int, y: int, shot) -> Optional[str]:
-        region = (max(0, x - 220), max(0, y - 60), 320, 60)
-        return self.screen.read_text_region(region, shot) or None
+
+def _classify_type(text: str) -> str:
+    """Map rally-card OCR text → monster type key."""
+    t = text.lower()
+    if "hydra" in t:
+        return "hydra"
+    if "ymir" in t:
+        return "ymir"
+    if "cerberus" in t:
+        return "cerberus"
+    if re.search(r"(ancient|event|boss)\s+golem|golem\s+(ancient|event|boss)", t):
+        return "golem"
+    if re.search(r"(dark|evil|ancient)\s+witch", t):
+        return "witch"
+    if "summon" in t:
+        return "summoned"
+    return "regular"
 
 
 def _extract_level(text: str) -> Optional[int]:

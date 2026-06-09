@@ -124,16 +124,38 @@ TEMPLATES = [
     ("troop_plus_button",       "rally",    "The '+' button next to a troop type row — adds troops one at a time; capture just the + icon"),
     ("troop_minus_button",      "rally",    "The '−' button next to a troop type row — removes troops; capture just the − icon"),
 
-    # ── Monster icons (world map) ─────────────────────────────────────────────
-    # Monsters appear as pink/red creature icons with a white dotted circular border.
-    # Capture each level separately — their icon art is distinct.
-    ("monster_level_1",         "monsters", "Level 1 monster icon on the world map (small pink/red creature with white dotted ring)"),
-    ("monster_level_2",         "monsters", "Level 2 monster icon"),
-    ("monster_level_3",         "monsters", "Level 3 monster icon"),
-    ("monster_level_4",         "monsters", "Level 4 monster icon"),
-    ("monster_level_5",         "monsters", "Level 5 monster icon (noticeably larger than Lv1)"),
-    ("monster_generic",         "monsters", "Any monster icon — use this as a fallback if level-specific matching fails"),
-    ("monster_info_popup",      "monsters", "The popup card that appears when you tap a monster — shows its name, level, and coordinates"),
+    # ── Regular monsters (world map, levels 1–23) ─────────────────────────────
+    # These are the standard pink/red creature icons with a white dotted ring.
+    # Capture each level you want the bot to target — the art changes noticeably
+    # at lower levels; higher levels are harder to distinguish so monster_regular
+    # acts as the catch-all for anything above level 10.
+    ("monster_level_1",         "monsters", "Regular monster Lv.1 icon (small pink/red creature with white dotted ring)"),
+    ("monster_level_2",         "monsters", "Regular monster Lv.2 icon"),
+    ("monster_level_3",         "monsters", "Regular monster Lv.3 icon"),
+    ("monster_level_4",         "monsters", "Regular monster Lv.4 icon"),
+    ("monster_level_5",         "monsters", "Regular monster Lv.5 icon"),
+    ("monster_level_6",         "monsters", "Regular monster Lv.6 icon"),
+    ("monster_level_7",         "monsters", "Regular monster Lv.7 icon"),
+    ("monster_level_8",         "monsters", "Regular monster Lv.8 icon"),
+    ("monster_level_9",         "monsters", "Regular monster Lv.9 icon"),
+    ("monster_level_10",        "monsters", "Regular monster Lv.10 icon"),
+    ("monster_regular",         "monsters", "Any regular monster above Lv.10 — capture a Lv.11+ icon as the catch-all"),
+
+    # ── Event monsters ────────────────────────────────────────────────────────
+    # Each event type has distinct art across all its levels.  Capture one icon
+    # for each type; the bot reads the actual level from the info popup via OCR.
+    ("monster_hydra",           "monsters", "Hydra event monster icon on the world map (Lv.1–6, blue sea-serpent appearance)"),
+    ("monster_ymir",            "monsters", "Ymir event monster icon (Lv.1–6, large ice-giant silhouette)"),
+    ("monster_cerberus",        "monsters", "Cerberus event monster icon (Lv.1–5, three-headed dog)"),
+    ("monster_golem",           "monsters", "Ancient/Event Golem monster icon (Lv.1–7, stone construct — distinct from regular Stone Golems)"),
+    ("monster_witch",           "monsters", "Dark/Evil Witch event monster icon (Lv.1–7, purple witch figure)"),
+
+    # ── Summoned monsters ─────────────────────────────────────────────────────
+    ("monster_summoned",        "monsters", "Summoned monster icon — capture any summoned monster as the generic template for this type"),
+
+    # ── Shared ────────────────────────────────────────────────────────────────
+    ("monster_generic",         "monsters", "Ultimate fallback — any monster icon not matched by the templates above"),
+    ("monster_info_popup",      "monsters", "The popup card that appears when you tap a monster (shows name, level, coordinates)"),
 ]
 
 

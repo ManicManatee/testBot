@@ -29,11 +29,15 @@ rally_joiner:
   enabled: true
   check_interval_seconds: 10       # How often to scan for rally invites
   march_preset: "preset_1"         # preset_1 … preset_5
+  # Per-type filters — set enabled: false to skip that type entirely
   filters:
-    min_monster_level: 1
-    max_monster_level: 5
-    monster_types:
-      - "all"                      # "all" = any type; or list specific names
+    regular:   {enabled: true,  min_level: 1,  max_level: 23}
+    hydra:     {enabled: true,  min_level: 1,  max_level: 6}
+    ymir:      {enabled: true,  min_level: 1,  max_level: 6}
+    cerberus:  {enabled: true,  min_level: 1,  max_level: 5}
+    golem:     {enabled: true,  min_level: 1,  max_level: 7}
+    witch:     {enabled: true,  min_level: 1,  max_level: 7}
+    summoned:  {enabled: false, min_level: 1,  max_level: 99}
 
 # ─── Rally Starter ────────────────────────────
 rally_starter:
@@ -50,11 +54,16 @@ monster_scanner:
   enabled: true
   scan_interval_minutes: 30        # How often to scan the world map
   auto_share: true                 # Post finds to alliance chat
-  min_level: 1
-  max_level: 5
-  target_types:
-    - "all"
   max_share_per_scan: 5
+  # Per-type filters — mirror the rally_joiner filters or set independently
+  filters:
+    regular:   {enabled: true,  min_level: 1,  max_level: 23}
+    hydra:     {enabled: true,  min_level: 1,  max_level: 6}
+    ymir:      {enabled: true,  min_level: 1,  max_level: 6}
+    cerberus:  {enabled: true,  min_level: 1,  max_level: 5}
+    golem:     {enabled: true,  min_level: 1,  max_level: 7}
+    witch:     {enabled: true,  min_level: 1,  max_level: 7}
+    summoned:  {enabled: true,  min_level: 1,  max_level: 99}
 
 # ─── Daily Tasks ──────────────────────────────
 daily_tasks:

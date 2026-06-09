@@ -131,7 +131,9 @@ The bot uses image recognition to find buttons and icons on screen. It needs ref
 | **Truce Agreements** | 8h / 24h / 3-day / 7-day Truce Agreement icons in the Use Item panel; the green "Use" button |
 | **Alliance War** | Alliance War button, Monster War tab, Join button on rally cards |
 | **Rally** | Rally option menu, Launch button, march preset tabs (I–VIII), troop Reset/+/− buttons, March button |
-| **Monsters** | Level 1–5 monster icons, generic monster, monster info popup |
+| **Regular Monsters** | Level 1–10 individual icons + a generic catch-all for Lv.11–23; the info popup |
+| **Event Monsters** | One icon per type: Hydra (Lv.1–6), Ymir (Lv.1–6), Cerberus (Lv.1–5), Golem (Lv.1–7), Witch (Lv.1–7) |
+| **Summoned Monsters** | Any summoned monster icon |
 | **Daily Tasks** | Daily Tasks button, header, Claim button, Claim All button, Go button |
 | **Royal Thief** | Events button, Royal Thief event banner, Invite button, active player indicator, per-player invite button |
 | **Stamina** | Stamina icon (lightning bolt), small/medium/large stamina restore items |
@@ -162,9 +164,14 @@ rally_joiner:
   enabled: true
   check_interval_seconds: 10
   march_preset: "preset_1"
-  filters:
-    min_monster_level: 1
-    max_monster_level: 5
+  filters:                       # per-type; set enabled: false to skip a type entirely
+    regular:   {enabled: true,  min_level: 1,  max_level: 23}
+    hydra:     {enabled: true,  min_level: 1,  max_level: 6}
+    ymir:      {enabled: true,  min_level: 1,  max_level: 6}
+    cerberus:  {enabled: true,  min_level: 1,  max_level: 5}
+    golem:     {enabled: true,  min_level: 1,  max_level: 7}
+    witch:     {enabled: true,  min_level: 1,  max_level: 7}
+    summoned:  {enabled: false, min_level: 1,  max_level: 99}
 
 rally_starter:
   enabled: true
@@ -176,9 +183,11 @@ monster_scanner:
   enabled: true
   scan_interval_minutes: 30
   auto_share: true
-  min_level: 1
-  max_level: 5
   max_share_per_scan: 5
+  filters:                       # same structure as rally_joiner filters
+    regular:   {enabled: true,  min_level: 1,  max_level: 23}
+    hydra:     {enabled: true,  min_level: 1,  max_level: 6}
+    # ... etc
 
 daily_tasks:
   enabled: true

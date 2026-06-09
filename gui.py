@@ -62,6 +62,18 @@ class _QueueHandler(logging.Handler):
             pass
 
 
+# Monster types and their natural level caps — mirrors bot/monster_scanner.py
+_MONSTER_TYPES = [
+    ("regular",  23),
+    ("hydra",     6),
+    ("ymir",      6),
+    ("cerberus",  5),
+    ("golem",     7),
+    ("witch",     7),
+    ("summoned", 99),
+]
+
+
 # ── Reusable widget helpers ───────────────────────────────────────────────────
 
 class _Row(ctk.CTkFrame):
@@ -116,6 +128,65 @@ class LabeledOption:
 
     def get(self) -> str:
         return self._menu.get()
+
+
+def _monster_filter_block(parent: ctk.CTkFrame, filter_cfg: dict) -> dict:
+    """
+    Render a per-type monster filter table inside *parent*.
+    Returns a dict keyed by type name, each value a (BooleanVar, Entry, Entry)
+    tuple for (enabled, min_level, max_level).
+    """
+    header = ctk.CTkFrame(parent, fg_color="transparent")
+    header.pack(fill="x", padx=16, pady=(8, 2))
+    for col, (label, width) in enumerate([
+        ("Type", 90), ("Enabled", 64), ("Min Lv", 56), ("Max Lv", 56)
+    ]):
+        ctk.CTkLabel(header, text=label, font=ctk.CTkFont(size=11, weight="bold"),
+                     width=width, anchor="w").pack(side="left", padx=(0, 6))
+
+    widgets: dict = {}
+    for mtype, natural_max in _MONSTER_TYPES:
+        tf = filter_cfg.get(mtype, {})
+        row = ctk.CTkFrame(parent, fg_color="transparent")
+        row.pack(fill="x", padx=16, pady=1)
+
+        ctk.CTkLabel(row, text=mtype.capitalize(), font=_FONT,
+                     width=90, anchor="w").pack(side="left", padx=(0, 6))
+
+        enabled_var = ctk.BooleanVar(value=tf.get("enabled", True))
+        sw = ctk.CTkSwitch(row, text="", variable=enabled_var, width=52)
+        sw.pack(side="left", padx=(0, 18))
+        if enabled_var.get():
+            sw.select()
+
+        min_ent = ctk.CTkEntry(row, width=52)
+        min_ent.insert(0, str(tf.get("min_level", 1)))
+        min_ent.pack(side="left", padx=(0, 8))
+
+        max_ent = ctk.CTkEntry(row, width=52)
+        max_ent.insert(0, str(tf.get("max_level", natural_max)))
+        max_ent.pack(side="left")
+
+        widgets[mtype] = (enabled_var, min_ent, max_ent)
+
+    return widgets
+
+
+def _read_filter_block(widgets: dict) -> dict:
+    """Convert widget dict from _monster_filter_block back to config dict."""
+    result = {}
+    for mtype, (enabled_var, min_ent, max_ent) in widgets.items():
+        try:
+            min_v = int(min_ent.get())
+        except ValueError:
+            min_v = 1
+        try:
+            max_v = int(max_ent.get())
+        except ValueError:
+            max_v = 99
+        result[mtype] = {"enabled": enabled_var.get(),
+                         "min_level": min_v, "max_level": max_v}
+    return result
 
 
 def _save_btn(parent: ctk.CTkFrame, cmd) -> ctk.CTkButton:
@@ -368,16 +439,14 @@ class EvonyBotGUI(ctk.CTk):
     def _build_joiner_tab(self) -> None:
         f = self._panel(self._tabs.tab("Rally Joiner"))
         j = self.cfg.get("rally_joiner", {})
-        flt = j.get("filters", {})
 
-        self._sw_joiner       = LabeledSwitch(f, "Enable rally joiner", j.get("enabled", True))
-        self._en_j_interval   = LabeledEntry(f, "Check interval (seconds)", j.get("check_interval_seconds", 10))
-        self._om_j_preset     = LabeledOption(f, "March preset", j.get("march_preset", "preset_1"), PRESETS)
+        self._sw_joiner     = LabeledSwitch(f, "Enable rally joiner", j.get("enabled", True))
+        self._en_j_interval = LabeledEntry(f, "Check interval (seconds)", j.get("check_interval_seconds", 10))
+        self._om_j_preset   = LabeledOption(f, "March preset", j.get("march_preset", "preset_1"), PRESETS)
         _separator(f)
-        ctk.CTkLabel(f, text="Monster level filter", font=ctk.CTkFont(weight="bold")).pack(
-            anchor="w", padx=16, pady=(4, 0))
-        self._en_j_min_lvl    = LabeledEntry(f, "Minimum level", flt.get("min_monster_level", 1), width=80)
-        self._en_j_max_lvl    = LabeledEntry(f, "Maximum level", flt.get("max_monster_level", 5), width=80)
+        ctk.CTkLabel(f, text="Monster type filters",
+                     font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=16, pady=(4, 2))
+        self._j_filters = _monster_filter_block(f, j.get("filters", {}))
 
         _save_btn(f, self._save_joiner)
 
@@ -403,10 +472,11 @@ class EvonyBotGUI(ctk.CTk):
         self._sw_scanner     = LabeledSwitch(f, "Enable monster scanner", s.get("enabled", True))
         self._sw_auto_share  = LabeledSwitch(f, "Auto-share finds to alliance chat", s.get("auto_share", True))
         self._en_sc_interval = LabeledEntry(f, "Scan interval (minutes)", s.get("scan_interval_minutes", 30))
-        _separator(f)
-        self._en_sc_min      = LabeledEntry(f, "Min monster level to hunt", s.get("min_level", 1), width=80)
-        self._en_sc_max      = LabeledEntry(f, "Max monster level to hunt", s.get("max_level", 5), width=80)
         self._en_sc_share    = LabeledEntry(f, "Max monsters shared per scan", s.get("max_share_per_scan", 5), width=80)
+        _separator(f)
+        ctk.CTkLabel(f, text="Monster type filters",
+                     font=ctk.CTkFont(weight="bold")).pack(anchor="w", padx=16, pady=(4, 2))
+        self._sc_filters = _monster_filter_block(f, s.get("filters", {}))
 
         _save_btn(f, self._save_scanner)
 
@@ -669,11 +739,7 @@ class EvonyBotGUI(ctk.CTk):
             "enabled": self._sw_joiner.get(),
             "check_interval_seconds": self._en_j_interval.get_int(),
             "march_preset": self._om_j_preset.get(),
-            "filters": {
-                "min_monster_level": self._en_j_min_lvl.get_int(),
-                "max_monster_level": self._en_j_max_lvl.get_int(),
-                "monster_types": ["all"],
-            },
+            "filters": _read_filter_block(self._j_filters),
         })
         _save_cfg(self.cfg)
         self._set_status("Rally joiner settings saved")
@@ -693,9 +759,8 @@ class EvonyBotGUI(ctk.CTk):
             "enabled": self._sw_scanner.get(),
             "auto_share": self._sw_auto_share.get(),
             "scan_interval_minutes": self._en_sc_interval.get_int(),
-            "min_level": self._en_sc_min.get_int(),
-            "max_level": self._en_sc_max.get_int(),
             "max_share_per_scan": self._en_sc_share.get_int(),
+            "filters": _read_filter_block(self._sc_filters),
         })
         _save_cfg(self.cfg)
         self._set_status("Scanner settings saved")
