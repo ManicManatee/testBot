@@ -103,9 +103,14 @@ TEMPLATES = [
     ("help_all_button",         "ui",       "The 'Help All' button that assists every alliance member's request in one tap"),
     ("individual_help_button",  "ui",       "The per-request 'Help' button when 'Help All' is not present"),
 
-    # ── Resource Collection ───────────────────────────────────────────────────
-    ("collect_all_button",      "ui",       "The 'Collect All' or 'Harvest All' shortcut button on the city screen (if your game version has one)"),
-    ("resource_harvest_icon",   "ui",       "The golden harvest icon that floats above a resource building when it is full and ready to collect"),
+    # ── Resource Gathering (world map) ───────────────────────────────────────────
+    # Resource tiles appear on the world map as small terrain icons.
+    # Capture each type separately — the bot uses them to find gatherable tiles.
+    ("gather_button",           "ui",       "The 'Gather' option in the action menu that appears when you tap a resource tile on the world map"),
+    ("resource_tile_food",      "resources","A food / flat-land resource tile on the world map (green field icon)"),
+    ("resource_tile_wood",      "resources","A lumber / forest resource tile on the world map (tree icon)"),
+    ("resource_tile_stone",     "resources","A stone / quarry resource tile on the world map (grey rock icon)"),
+    ("resource_tile_iron",      "resources","An iron / mine resource tile on the world map (dark ore icon)"),
 
     # ── Rally ─────────────────────────────────────────────────────────────────
     ("rally_join_button",       "rally",    "The active 'Join' button on a Monster War rally card — NOT the greyed-out 'Joined' state"),

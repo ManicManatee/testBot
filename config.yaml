@@ -85,9 +85,18 @@ alliance_helper:
   check_interval_minutes: 20       # How often to check for pending help requests
 
 # ─── Resource Collector ───────────────────────
+# Sends gathering marches to resource tiles on the world map.
 resource_collector:
   enabled: true
-  check_interval_minutes: 45       # How often to harvest resource buildings
+  check_interval_minutes: 30       # How often to check for open march slots
+  resource_types:                  # Which tile types to gather
+    - "food"
+    - "wood"
+    - "stone"
+    - "iron"
+  march_preset: "preset_2"         # Preset to use for gathering troops
+  max_marches_per_run: 5           # Max gathering marches to send per check
+  pan_map: true                    # Pan the map to find more tiles after the visible ones
 
 # ─── Logging ──────────────────────────────────
 logging:

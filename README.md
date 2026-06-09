@@ -20,7 +20,7 @@ Evony Bot is a Windows automation tool for **Evony: The King's Return** that han
 | **Royal Thief Invites** | Checks for an active Royal Thief event and sends rally invitations to online alliance members. The bot is more social than you are. |
 | **Stamina Manager** | Reads your stamina counter and uses a restore item from inventory before it hits zero. Monsters don't stop spawning because you forgot to restock. |
 | **Alliance Helper** | Detects pending alliance help requests and taps "Help All" instantly. Your alliance will wonder how you're always the first to help. |
-| **Resource Collector** | Harvests full resource buildings via "Collect All" or by tapping individual harvest icons. Wood and food don't collect themselves. |
+| **Resource Collector** | Scans the world map for food, wood, stone, and iron tiles, then sends gathering marches to fill them. Pans the map to find more tiles until your march slots are full. Wood and food don't collect themselves. |
 
 All features are configurable — enable only what you want, tune the intervals, and adjust thresholds. Everything lives in a plain `config.yaml` file you can edit with Notepad.
 
@@ -136,7 +136,7 @@ The bot uses image recognition to find buttons and icons on screen. It needs ref
 | **Royal Thief** | Events button, Royal Thief event banner, Invite button, active player indicator, per-player invite button |
 | **Stamina** | Stamina icon (lightning bolt), small/medium/large stamina restore items |
 | **Alliance Help** | Alliance help badge, Help All button, individual help button |
-| **Resources** | Collect All shortcut button, harvest icon floating over a full resource building |
+| **Resources** | "Gather" option in the tile action menu; food / wood / stone / iron tile icons on the world map |
 
 > **Tip:** The tool skips already-captured templates by default. If something stops working, re-run it and just recapture that one template — you don't have to redo everything.
 
@@ -203,7 +203,11 @@ alliance_helper:
 
 resource_collector:
   enabled: true
-  check_interval_minutes: 45
+  check_interval_minutes: 30
+  resource_types: [food, wood, stone, iron]
+  march_preset: "preset_2"         # keep this separate from your combat preset
+  max_marches_per_run: 5           # stops when march queue is full anyway
+  pan_map: true                    # pan the world map to find more tiles
 ```
 
 Changes take effect the next time you start the bot. The GUI's Save buttons also write directly to this file.
@@ -318,6 +322,11 @@ The bot only acts when it can see the `royal_thief_event` banner in the Events p
 
 **Stamina never restores**
 Check that `stamina_icon` is captured (gives the bot an anchor for OCR). Also verify you have stamina restore items in your inventory and that `stamina_item_small/medium/large` templates are captured for the sizes you own.
+
+**Resource collector sends 0 marches**
+1. Make sure `gather_button` is captured — this is the "Gather" option in the tile action menu, not a building button
+2. Capture at least one resource tile template (`resource_tile_food`, `resource_tile_wood`, etc.) for the types you enabled in config
+3. The bot stops early if the march queue is full — that's intentional; it will retry next check interval
 
 **pip install failed during setup**
 Run it manually from the install folder:

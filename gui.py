@@ -472,8 +472,17 @@ class EvonyBotGUI(ctk.CTk):
         f = self._panel(self._tabs.tab("Resources"))
         r = self.cfg.get("resource_collector", {})
 
-        self._sw_resources   = LabeledSwitch(f, "Enable resource collector", r.get("enabled", True))
-        self._en_rc_interval = LabeledEntry(f, "Check interval (minutes)", r.get("check_interval_minutes", 45))
+        self._sw_resources    = LabeledSwitch(f, "Enable resource collector", r.get("enabled", True))
+        self._en_rc_interval  = LabeledEntry(f, "Check interval (minutes)", r.get("check_interval_minutes", 30))
+        self._om_rc_preset    = LabeledOption(f, "March preset for gathering", r.get("march_preset", "preset_2"), PRESETS)
+        self._en_rc_max       = LabeledEntry(f, "Max marches per run", r.get("max_marches_per_run", 5), width=80)
+        self._sw_rc_pan       = LabeledSwitch(f, "Pan map to find more tiles", r.get("pan_map", True))
+        _separator(f)
+        ctk.CTkLabel(f, text="Resource types to gather  (comma-separated: food, wood, stone, iron)",
+                     font=_FONT).pack(anchor="w", padx=16, pady=(4, 0))
+        self._en_rc_types = ctk.CTkEntry(f, width=300)
+        self._en_rc_types.insert(0, ", ".join(r.get("resource_types", ["food", "wood", "stone", "iron"])))
+        self._en_rc_types.pack(anchor="w", padx=16, pady=(4, 0))
 
         _save_btn(f, self._save_resources)
 
@@ -730,9 +739,14 @@ class EvonyBotGUI(ctk.CTk):
         self._set_status("Alliance helper settings saved")
 
     def _save_resources(self) -> None:
+        types = [s.strip() for s in self._en_rc_types.get().split(",") if s.strip()]
         self.cfg.setdefault("resource_collector", {}).update({
             "enabled": self._sw_resources.get(),
             "check_interval_minutes": self._en_rc_interval.get_int(),
+            "march_preset": self._om_rc_preset.get(),
+            "max_marches_per_run": self._en_rc_max.get_int(),
+            "pan_map": self._sw_rc_pan.get(),
+            "resource_types": types,
         })
         _save_cfg(self.cfg)
         self._set_status("Resource collector settings saved")
