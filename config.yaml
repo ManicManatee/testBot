@@ -56,6 +56,39 @@ monster_scanner:
     - "all"
   max_share_per_scan: 5
 
+# ─── Daily Tasks ──────────────────────────────
+daily_tasks:
+  enabled: true
+  check_interval_minutes: 60       # How often to open the Daily Tasks panel
+  claim_only: true                  # false = also tap "Go" on incomplete tasks
+
+# ─── Royal Thief ──────────────────────────────
+royal_thief:
+  enabled: true
+  check_interval_minutes: 30       # How often to check for an active Royal Thief event
+  invite_active_only: true          # Only invite players shown as online/active
+  max_invites_per_run: 5            # Cap per run to avoid spamming
+
+# ─── Stamina Manager ──────────────────────────
+stamina:
+  enabled: true
+  check_interval_minutes: 15       # How often to read the stamina counter
+  min_stamina: 10                   # Use a restore item when stamina drops below this
+  preferred_items:
+    - "small"
+    - "medium"
+    - "large"
+
+# ─── Alliance Helper ──────────────────────────
+alliance_helper:
+  enabled: true
+  check_interval_minutes: 20       # How often to check for pending help requests
+
+# ─── Resource Collector ───────────────────────
+resource_collector:
+  enabled: true
+  check_interval_minutes: 45       # How often to harvest resource buildings
+
 # ─── Logging ──────────────────────────────────
 logging:
   level: "INFO"                    # DEBUG | INFO | WARNING | ERROR

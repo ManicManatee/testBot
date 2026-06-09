@@ -77,6 +77,36 @@ TEMPLATES = [
     ("alliance_war_button",     "ui",       "The Alliance War button on the city screen (sword/shield icon) that opens the Alliance War panel"),
     ("monster_war_tab",         "ui",       "The 'Monster War' sub-tab inside the Alliance War panel — tap this to see monster rally cards"),
 
+    # ── Events / Royal Thief ──────────────────────────────────────────────────
+    ("events_button",           "ui",       "The Events / Activities button on the city screen — opens the list of active events"),
+    ("royal_thief_event",       "ui",       "The 'Royal Thief' entry in the events list — capture the event banner/icon"),
+    ("royal_thief_header",      "ui",       "The header bar of the Royal Thief event screen — confirms the panel opened"),
+    ("royal_thief_invite_button","ui",      "The 'Invite' button inside the Royal Thief panel (not per-player — the general invite action)"),
+    ("active_player_indicator", "ui",       "The green online dot or 'Active' badge shown next to a player's name in the invite list"),
+    ("player_invite_button",    "ui",       "The per-player 'Invite' button in the Royal Thief or alliance member list"),
+
+    # ── Daily Tasks ───────────────────────────────────────────────────────────
+    ("daily_tasks_button",      "ui",       "The Daily Tasks / Daily Quests button on the city screen (usually a scroll or star icon)"),
+    ("daily_tasks_header",      "ui",       "The header bar of the Daily Tasks panel — confirms it opened"),
+    ("task_claim_button",       "ui",       "The green 'Claim' button on a completed task row — there may be several in the list"),
+    ("task_claim_all_button",   "ui",       "The 'Claim All' button at the top of the Daily Tasks panel (not all game versions have this)"),
+    ("task_go_button",          "ui",       "The 'Go' button on an incomplete task row — navigates you to where that task is done"),
+
+    # ── Stamina ───────────────────────────────────────────────────────────────
+    ("stamina_icon",            "ui",       "The stamina icon (lightning bolt or flame) on the city screen, next to the stamina counter"),
+    ("stamina_item_small",      "items",    "Small Stamina Potion / small stamina restore item icon in the Use Item inventory panel"),
+    ("stamina_item_medium",     "items",    "Medium Stamina Potion icon in inventory"),
+    ("stamina_item_large",      "items",    "Large Stamina Potion icon in inventory"),
+
+    # ── Alliance Help ─────────────────────────────────────────────────────────
+    ("alliance_help_button",    "ui",       "The alliance help notification badge — a button with a number showing pending help requests"),
+    ("help_all_button",         "ui",       "The 'Help All' button that assists every alliance member's request in one tap"),
+    ("individual_help_button",  "ui",       "The per-request 'Help' button when 'Help All' is not present"),
+
+    # ── Resource Collection ───────────────────────────────────────────────────
+    ("collect_all_button",      "ui",       "The 'Collect All' or 'Harvest All' shortcut button on the city screen (if your game version has one)"),
+    ("resource_harvest_icon",   "ui",       "The golden harvest icon that floats above a resource building when it is full and ready to collect"),
+
     # ── Rally ─────────────────────────────────────────────────────────────────
     ("rally_join_button",       "rally",    "The active 'Join' button on a Monster War rally card — NOT the greyed-out 'Joined' state"),
     ("rally_button",            "rally",    "The 'Rally' option in the action menu that pops up when you tap a monster on the map"),

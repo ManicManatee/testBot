@@ -25,6 +25,7 @@ if getattr(sys, "frozen", False):
 
 CONFIG_PATH = "config.yaml"
 PRESETS = [f"preset_{i}" for i in range(1, 6)]
+STAMINA_ITEMS = ["small", "medium", "large"]
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -146,6 +147,10 @@ class EvonyBotGUI(ctk.CTk):
         self._uptime_start: float | None = None
         self._rally_count = 0
         self._monster_count = 0
+        self._task_count = 0
+        self._invite_count = 0
+        self._help_count = 0
+        self._resource_count = 0
 
         self._setup_logging()
         self._build()
@@ -181,13 +186,36 @@ class EvonyBotGUI(ctk.CTk):
                     self._monster_count += 1
                     self._card_monsters.configure(text=str(self._monster_count))
                 if "shield ok" in ml or "shield" in ml and "remaining" in ml:
-                    # Extract "XXm remaining" for the card
                     import re
                     m = re.search(r"(\d+)m remaining", msg)
                     if m:
                         mins = int(m.group(1))
                         h2, rem = divmod(mins, 60)
                         self._card_shield.configure(text=f"{h2}h {rem:02d}m" if h2 else f"{rem}m")
+                if "daily tasks:" in ml and "claimed" in ml:
+                    import re
+                    m = re.search(r"(\d+) reward", msg)
+                    if m:
+                        self._task_count += int(m.group(1))
+                        self._card_tasks.configure(text=str(self._task_count))
+                if "royal thief:" in ml and "invite" in ml:
+                    import re
+                    m = re.search(r"(\d+) invite", msg)
+                    if m:
+                        self._invite_count += int(m.group(1))
+                        self._card_invites.configure(text=str(self._invite_count))
+                if "alliance help:" in ml:
+                    import re
+                    m = re.search(r"(\d+) request|tapped help all", msg.lower())
+                    if m:
+                        self._help_count += 1
+                        self._card_helps.configure(text=str(self._help_count))
+                if "resources collected:" in ml:
+                    import re
+                    m = re.search(r"(\d+) action", msg)
+                    if m:
+                        self._resource_count += int(m.group(1))
+                        self._card_resources.configure(text=str(self._resource_count))
         except queue.Empty:
             pass
         self.after(200, self._poll_logs)
@@ -238,7 +266,9 @@ class EvonyBotGUI(ctk.CTk):
         self._tabs = ctk.CTkTabview(self)
         self._tabs.grid(row=1, column=0, sticky="nsew", padx=10, pady=(4, 0))
 
-        for t in ["Dashboard", "Shield", "Rally Joiner", "Rally Starter", "Scanner", "Templates", "Settings"]:
+        for t in ["Dashboard", "Shield", "Rally Joiner", "Rally Starter", "Scanner",
+                  "Daily Tasks", "Royal Thief", "Stamina", "Alliance", "Resources",
+                  "Templates", "Settings"]:
             self._tabs.add(t)
 
         self._build_dashboard()
@@ -246,6 +276,11 @@ class EvonyBotGUI(ctk.CTk):
         self._build_joiner_tab()
         self._build_starter_tab()
         self._build_scanner_tab()
+        self._build_daily_tab()
+        self._build_thief_tab()
+        self._build_stamina_tab()
+        self._build_alliance_tab()
+        self._build_resources_tab()
         self._build_templates_tab()
         self._build_settings_tab()
 
@@ -264,16 +299,20 @@ class EvonyBotGUI(ctk.CTk):
         tab.grid_columnconfigure(0, weight=1)
         tab.grid_rowconfigure(1, weight=1)
 
-        # Stat cards
+        # Stat cards — two rows of four
         cards = ctk.CTkFrame(tab, fg_color="transparent")
         cards.grid(row=0, column=0, sticky="ew", pady=(4, 8))
         for i in range(4):
             cards.grid_columnconfigure(i, weight=1)
 
-        self._card_shield   = self._stat_card(cards, "Shield",          "—", 0)
-        self._card_rallies  = self._stat_card(cards, "Rallies Joined",  "0", 1)
-        self._card_monsters = self._stat_card(cards, "Monsters Found",  "0", 2)
-        self._card_uptime   = self._stat_card(cards, "Uptime",          "—", 3)
+        self._card_shield    = self._stat_card(cards, "Shield",          "—", 0, 0)
+        self._card_rallies   = self._stat_card(cards, "Rallies Joined",  "0", 1, 0)
+        self._card_monsters  = self._stat_card(cards, "Monsters Found",  "0", 2, 0)
+        self._card_uptime    = self._stat_card(cards, "Uptime",          "—", 3, 0)
+        self._card_tasks     = self._stat_card(cards, "Tasks Claimed",   "0", 0, 1)
+        self._card_invites   = self._stat_card(cards, "RT Invites Sent", "0", 1, 1)
+        self._card_helps     = self._stat_card(cards, "Alliance Helps",  "0", 2, 1)
+        self._card_resources = self._stat_card(cards, "Resources Runs",  "0", 3, 1)
 
         # Log pane
         log_frame = ctk.CTkFrame(tab)
@@ -297,9 +336,9 @@ class EvonyBotGUI(ctk.CTk):
         )
         self._log_box.grid(row=1, column=0, columnspan=2, sticky="nsew", padx=8, pady=(0, 8))
 
-    def _stat_card(self, parent, title: str, value: str, col: int) -> ctk.CTkLabel:
+    def _stat_card(self, parent, title: str, value: str, col: int, row: int = 0) -> ctk.CTkLabel:
         f = ctk.CTkFrame(parent)
-        f.grid(row=0, column=col, padx=5, pady=4, sticky="ew")
+        f.grid(row=row, column=col, padx=5, pady=4, sticky="ew")
         ctk.CTkLabel(f, text=title, font=ctk.CTkFont(size=11), text_color="#aaaaaa").pack(pady=(8, 0))
         lbl = ctk.CTkLabel(f, text=value, font=ctk.CTkFont(size=22, weight="bold"))
         lbl.pack(pady=(0, 8))
@@ -370,6 +409,73 @@ class EvonyBotGUI(ctk.CTk):
         self._en_sc_share    = LabeledEntry(f, "Max monsters shared per scan", s.get("max_share_per_scan", 5), width=80)
 
         _save_btn(f, self._save_scanner)
+
+    # ── Daily Tasks tab ───────────────────────────────────────────────────
+
+    def _build_daily_tab(self) -> None:
+        f = self._panel(self._tabs.tab("Daily Tasks"))
+        d = self.cfg.get("daily_tasks", {})
+
+        self._sw_daily      = LabeledSwitch(f, "Enable daily task manager", d.get("enabled", True))
+        self._en_dt_interval = LabeledEntry(f, "Check interval (minutes)", d.get("check_interval_minutes", 60))
+        self._sw_claim_only = LabeledSwitch(f, "Claim only (don't tap Go buttons)", d.get("claim_only", True))
+
+        _save_btn(f, self._save_daily)
+
+    # ── Royal Thief tab ───────────────────────────────────────────────────
+
+    def _build_thief_tab(self) -> None:
+        f = self._panel(self._tabs.tab("Royal Thief"))
+        t = self.cfg.get("royal_thief", {})
+
+        self._sw_thief          = LabeledSwitch(f, "Enable Royal Thief invites", t.get("enabled", True))
+        self._en_rt_interval    = LabeledEntry(f, "Check interval (minutes)", t.get("check_interval_minutes", 30))
+        self._sw_active_only    = LabeledSwitch(f, "Only invite active/online members", t.get("invite_active_only", True))
+        self._en_rt_max_invites = LabeledEntry(f, "Max invites per run", t.get("max_invites_per_run", 5), width=80)
+
+        _save_btn(f, self._save_thief)
+
+    # ── Stamina tab ───────────────────────────────────────────────────────
+
+    def _build_stamina_tab(self) -> None:
+        f = self._panel(self._tabs.tab("Stamina"))
+        s = self.cfg.get("stamina", {})
+
+        self._sw_stamina       = LabeledSwitch(f, "Enable stamina manager", s.get("enabled", True))
+        self._en_st_interval   = LabeledEntry(f, "Check interval (minutes)", s.get("check_interval_minutes", 15))
+        self._en_st_min        = LabeledEntry(f, "Restore when stamina below", s.get("min_stamina", 10), width=80)
+        _separator(f)
+        ctk.CTkLabel(f, text="Preferred restore items  (comma-separated: small, medium, large)",
+                     font=_FONT).pack(anchor="w", padx=16, pady=(4, 0))
+        self._en_st_items = ctk.CTkEntry(f, width=260)
+        self._en_st_items.insert(0, ", ".join(s.get("preferred_items", ["small", "medium", "large"])))
+        self._en_st_items.pack(anchor="w", padx=16, pady=(4, 0))
+
+        _save_btn(f, self._save_stamina)
+
+    # ── Alliance tab ──────────────────────────────────────────────────────
+
+    def _build_alliance_tab(self) -> None:
+        f = self._panel(self._tabs.tab("Alliance"))
+        h = self.cfg.get("alliance_helper", {})
+
+        ctk.CTkLabel(f, text="Alliance Helper",
+                     font=ctk.CTkFont(weight="bold", size=14)).pack(anchor="w", padx=16, pady=(12, 2))
+        self._sw_helper      = LabeledSwitch(f, "Enable alliance helper (Help All)", h.get("enabled", True))
+        self._en_h_interval  = LabeledEntry(f, "Check interval (minutes)", h.get("check_interval_minutes", 20))
+
+        _save_btn(f, self._save_alliance)
+
+    # ── Resources tab ─────────────────────────────────────────────────────
+
+    def _build_resources_tab(self) -> None:
+        f = self._panel(self._tabs.tab("Resources"))
+        r = self.cfg.get("resource_collector", {})
+
+        self._sw_resources   = LabeledSwitch(f, "Enable resource collector", r.get("enabled", True))
+        self._en_rc_interval = LabeledEntry(f, "Check interval (minutes)", r.get("check_interval_minutes", 45))
+
+        _save_btn(f, self._save_resources)
 
     # ── Templates tab ─────────────────────────────────────────────────────
 
@@ -507,6 +613,10 @@ class EvonyBotGUI(ctk.CTk):
         self._tick_uptime()
         self._rally_count = 0
         self._monster_count = 0
+        self._task_count = 0
+        self._invite_count = 0
+        self._help_count = 0
+        self._resource_count = 0
 
     def _stop_bot(self) -> None:
         if self._bot:
@@ -529,8 +639,10 @@ class EvonyBotGUI(ctk.CTk):
     # ── Save handlers ─────────────────────────────────────────────────────
 
     def _apply_all(self) -> None:
-        for fn in [self._save_shield, self._save_joiner,
-                   self._save_starter, self._save_scanner, self._save_settings]:
+        for fn in [self._save_shield, self._save_joiner, self._save_starter,
+                   self._save_scanner, self._save_daily, self._save_thief,
+                   self._save_stamina, self._save_alliance, self._save_resources,
+                   self._save_settings]:
             fn()
 
     def _save_shield(self) -> None:
@@ -578,6 +690,52 @@ class EvonyBotGUI(ctk.CTk):
         })
         _save_cfg(self.cfg)
         self._set_status("Scanner settings saved")
+
+    def _save_daily(self) -> None:
+        self.cfg.setdefault("daily_tasks", {}).update({
+            "enabled": self._sw_daily.get(),
+            "check_interval_minutes": self._en_dt_interval.get_int(),
+            "claim_only": self._sw_claim_only.get(),
+        })
+        _save_cfg(self.cfg)
+        self._set_status("Daily tasks settings saved")
+
+    def _save_thief(self) -> None:
+        self.cfg.setdefault("royal_thief", {}).update({
+            "enabled": self._sw_thief.get(),
+            "check_interval_minutes": self._en_rt_interval.get_int(),
+            "invite_active_only": self._sw_active_only.get(),
+            "max_invites_per_run": self._en_rt_max_invites.get_int(),
+        })
+        _save_cfg(self.cfg)
+        self._set_status("Royal Thief settings saved")
+
+    def _save_stamina(self) -> None:
+        items = [s.strip() for s in self._en_st_items.get().split(",") if s.strip()]
+        self.cfg.setdefault("stamina", {}).update({
+            "enabled": self._sw_stamina.get(),
+            "check_interval_minutes": self._en_st_interval.get_int(),
+            "min_stamina": self._en_st_min.get_int(),
+            "preferred_items": items,
+        })
+        _save_cfg(self.cfg)
+        self._set_status("Stamina settings saved")
+
+    def _save_alliance(self) -> None:
+        self.cfg.setdefault("alliance_helper", {}).update({
+            "enabled": self._sw_helper.get(),
+            "check_interval_minutes": self._en_h_interval.get_int(),
+        })
+        _save_cfg(self.cfg)
+        self._set_status("Alliance helper settings saved")
+
+    def _save_resources(self) -> None:
+        self.cfg.setdefault("resource_collector", {}).update({
+            "enabled": self._sw_resources.get(),
+            "check_interval_minutes": self._en_rc_interval.get_int(),
+        })
+        _save_cfg(self.cfg)
+        self._set_status("Resource collector settings saved")
 
     def _save_settings(self) -> None:
         self.cfg.setdefault("adb", {})["device"] = self._en_device.get().strip()
