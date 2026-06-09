@@ -4,7 +4,7 @@
 
 You've built the walls. You've trained the troops. You've stared at the same world map tile for 45 minutes waiting for a level 4 monster to not move. **Enough.** Let the bot do it.
 
-Evony Bot is a Windows automation tool for **Evony: The King's Return** that handles the tedious stuff — shield refreshes, monster rallies, scouting — so you can get back to doing literally anything else with your life.
+Evony Bot is a Windows automation tool for **Evony: The King's Return** that handles the tedious stuff — shield refreshes, monster rallies, scouting, daily tasks, stamina, alliance help, resource collection, Royal Thief invites — so you can get back to doing literally anything else with your life.
 
 ---
 
@@ -13,11 +13,16 @@ Evony Bot is a Windows automation tool for **Evony: The King's Return** that han
 | Feature | What it means in practice |
 |---|---|
 | **Truce Agreement Monitor** | Checks your Truce Agreement timer and quietly uses a new one before enemies notice you're unprotected. Basically a babysitter for your city walls. |
-| **Rally Joiner** | Spots monster rally invites in alliance chat and joins them automatically. You get the glory; the bot does the commute. |
+| **Rally Joiner** | Opens the Alliance War → Monster War tab, spots active rally cards, and joins them by dispatching exactly **1 troop**. You get the kill credit; you spend nothing meaningful. |
 | **Rally Starter** | Finds monsters on the map and launches rally attacks with your configured troop preset. The bot has more initiative than most alliance members. |
 | **Monster Scanner** | Scans the world map, reads monster coordinates via OCR, and posts them to alliance chat. Your allies will think you never sleep. You won't correct them. |
+| **Daily Tasks** | Opens the Daily Tasks panel and claims every completed reward. Optionally taps "Go" on incomplete tasks to kick them off. Never leave free loot on the table again. |
+| **Royal Thief Invites** | Checks for an active Royal Thief event and sends rally invitations to online alliance members. The bot is more social than you are. |
+| **Stamina Manager** | Reads your stamina counter and uses a restore item from inventory before it hits zero. Monsters don't stop spawning because you forgot to restock. |
+| **Alliance Helper** | Detects pending alliance help requests and taps "Help All" instantly. Your alliance will wonder how you're always the first to help. |
+| **Resource Collector** | Harvests full resource buildings via "Collect All" or by tapping individual harvest icons. Wood and food don't collect themselves. |
 
-All features are configurable — enable only what you want, tune the intervals, filter by monster level, and pick your march preset. Everything lives in a plain `config.yaml` file you can edit with Notepad.
+All features are configurable — enable only what you want, tune the intervals, and adjust thresholds. Everything lives in a plain `config.yaml` file you can edit with Notepad.
 
 ---
 
@@ -25,7 +30,9 @@ All features are configurable — enable only what you want, tune the intervals,
 
 A dark-themed control panel (`EvonyBot.exe`) with live log output, per-feature toggles, stat cards, and a template status panel. No command line required unless you're into that kind of thing.
 
-![Tabs: Dashboard · Shield · Rally Joiner · Rally Starter · Scanner · Templates · Settings]
+**Tabs:** Dashboard · Shield · Rally Joiner · Rally Starter · Scanner · Daily Tasks · Royal Thief · Stamina · Alliance · Resources · Templates · Settings
+
+**Dashboard stat cards:** Shield timer · Rallies Joined · Monsters Found · Uptime · Tasks Claimed · RT Invites Sent · Alliance Helps · Resources Runs
 
 ---
 
@@ -43,7 +50,7 @@ The bot talks to your emulator over ADB.
 4. Open a new terminal and verify: `adb version`
 
 ### 2. Tesseract OCR
-Reads text from the screen (shield timers, monster coordinates, etc.).
+Reads text from the screen (shield timers, monster coordinates, stamina counters, etc.).
 
 1. Download the Windows installer from [github.com/UB-Mannheim/tesseract/wiki](https://github.com/UB-Mannheim/tesseract/wiki)
 2. Run it — the default install path (`C:\Program Files\Tesseract-OCR\`) is fine
@@ -100,7 +107,7 @@ python main.py
 
 The bot uses image recognition to find buttons and icons on screen. It needs reference screenshots ("templates") of your specific game UI — because resolution, skin, and game version all affect pixel layout.
 
-**This is a one-time setup. Takes about 10–15 minutes.**
+**This is a one-time setup. Takes about 20–30 minutes.**
 
 ### Steps
 
@@ -116,18 +123,24 @@ The bot uses image recognition to find buttons and icons on screen. It needs ref
    - Save the cropped region as a template PNG
 4. Open `screenshot_preview.png` in any image viewer to find the coordinates
 
-### Templates You'll Need to Capture (~31 total)
+### Templates You'll Need to Capture (~55 total)
 
 | Category | Examples |
 |---|---|
-| **UI Navigation** | City screen blue dome (active Truce), city button, world map button, alliance chat button, inventory button, close button |
-| **Truce Agreements** | 8h / 24h / 3-day / 7-day Truce Agreement item icons in the Use Item panel; the green "Use" button |
-| **Rally** | Rally join button, Rally option from monster menu, Launch button, march preset buttons, confirm button |
-| **Monsters** | Level 1–5 monster icons (pink/red creatures with white dotted ring), monster info popup |
+| **UI Navigation** | City indicator, world map indicator, city/map/chat/inventory buttons, close button, confirm button |
+| **Truce Agreements** | 8h / 24h / 3-day / 7-day Truce Agreement icons in the Use Item panel; the green "Use" button |
+| **Alliance War** | Alliance War button, Monster War tab, Join button on rally cards |
+| **Rally** | Rally option menu, Launch button, march preset tabs (I–VIII), troop Reset/+/− buttons, March button |
+| **Monsters** | Level 1–5 monster icons, generic monster, monster info popup |
+| **Daily Tasks** | Daily Tasks button, header, Claim button, Claim All button, Go button |
+| **Royal Thief** | Events button, Royal Thief event banner, Invite button, active player indicator, per-player invite button |
+| **Stamina** | Stamina icon (lightning bolt), small/medium/large stamina restore items |
+| **Alliance Help** | Alliance help badge, Help All button, individual help button |
+| **Resources** | Collect All shortcut button, harvest icon floating over a full resource building |
+
+> **Tip:** The tool skips already-captured templates by default. If something stops working, re-run it and just recapture that one template — you don't have to redo everything.
 
 > **Evony terminology tip:** The game calls protection items **"Truce Agreements"** (8 Hour / 24 Hour / 3 Day / 7 Day). The timer is shown as `Remaining Time: HH:MM:SS` in the Use Item panel. The bot reads and parses this format automatically.
-
-> **Tip:** If a template isn't working well, just re-run the capture tool and choose to recapture that one item. The tool skips already-captured templates by default.
 
 ---
 
@@ -136,21 +149,19 @@ The bot uses image recognition to find buttons and icons on screen. It needs ref
 All settings live in `config.yaml` in the install folder. Edit it with any text editor (there's an "Edit Config" shortcut in the Start Menu).
 
 ```yaml
-# Which emulator to connect to
 adb:
   device: "127.0.0.1:5555"   # ← change this to match your emulator
 
-# "Truce Agreement" in-game — timer is read as "Remaining Time: HH:MM:SS"
 shield:
   enabled: true
-  check_interval_minutes: 15     # check every 15 minutes
-  refresh_threshold_minutes: 60  # use a new Truce Agreement when < 1 hour remains
-  preferred_shields: [8h, 24h, 3d, 7d]  # try 8h first, then 24h, then 3d, then 7d
+  check_interval_minutes: 15
+  refresh_threshold_minutes: 60
+  preferred_shields: [8h, 24h, 3d, 7d]
 
 rally_joiner:
   enabled: true
   check_interval_seconds: 10
-  march_preset: "preset_1"       # which march preset to send
+  march_preset: "preset_1"
   filters:
     min_monster_level: 1
     max_monster_level: 5
@@ -159,15 +170,40 @@ rally_starter:
   enabled: true
   march_preset: "preset_1"
   rally_time_minutes: 10
-  auto_target_from_scanner: true  # rally the monsters the scanner finds
+  auto_target_from_scanner: true
 
 monster_scanner:
   enabled: true
   scan_interval_minutes: 30
-  auto_share: true               # post finds to alliance chat
+  auto_share: true
   min_level: 1
   max_level: 5
   max_share_per_scan: 5
+
+daily_tasks:
+  enabled: true
+  check_interval_minutes: 60
+  claim_only: true             # false = also tap "Go" on incomplete tasks
+
+royal_thief:
+  enabled: true
+  check_interval_minutes: 30
+  invite_active_only: true     # only invite online players
+  max_invites_per_run: 5
+
+stamina:
+  enabled: true
+  check_interval_minutes: 15
+  min_stamina: 10              # use a restore item when below this
+  preferred_items: [small, medium, large]
+
+alliance_helper:
+  enabled: true
+  check_interval_minutes: 20
+
+resource_collector:
+  enabled: true
+  check_interval_minutes: 45
 ```
 
 Changes take effect the next time you start the bot. The GUI's Save buttons also write directly to this file.
@@ -196,28 +232,34 @@ Logs go to both the console and `logs/evony_bot.log`.
 
 ```
 EvonyBot/
-├── gui.py                  # GUI manager (the thing you launch)
-├── main.py                 # Headless CLI entry point
-├── capture_templates.py    # Template capture wizard
-├── config.yaml             # All your settings live here
-├── requirements.txt        # Python dependencies
+├── gui.py                    # GUI manager (the thing you launch)
+├── main.py                   # Headless CLI entry point
+├── capture_templates.py      # Template capture wizard
+├── config.yaml               # All your settings live here
+├── requirements.txt          # Python dependencies
 │
 ├── bot/
-│   ├── adb_controller.py   # ADB: screenshot, tap, swipe, type
-│   ├── screen_reader.py    # OpenCV template matching + OCR
-│   ├── navigator.py        # Screen-state machine (city/map/chat/inventory)
-│   ├── shield_manager.py   # Shield check + auto-renewal
-│   ├── rally_joiner.py     # Detect and join rally invites
-│   ├── rally_starter.py    # Launch rally attacks
-│   └── monster_scanner.py  # Scan map + share to alliance chat
+│   ├── adb_controller.py     # ADB: screenshot, tap, swipe, type
+│   ├── screen_reader.py      # OpenCV template matching + OCR
+│   ├── navigator.py          # Screen-state machine (city/map/chat/inventory)
+│   ├── shield_manager.py     # Truce Agreement check + auto-renewal
+│   ├── rally_joiner.py       # Join monster rallies with 1 troop
+│   ├── rally_starter.py      # Launch rally attacks from scanner results
+│   ├── monster_scanner.py    # Scan world map + share to alliance chat
+│   ├── daily_tasks.py        # Claim daily task rewards
+│   ├── royal_thief.py        # Send Royal Thief event invites
+│   ├── stamina_manager.py    # Auto-restore stamina from inventory
+│   ├── alliance_helper.py    # Help All alliance requests
+│   └── resource_collector.py # Harvest resource buildings
 │
-├── templates/              # Your captured UI screenshots go here
+├── templates/                # Your captured UI screenshots go here
 │   ├── ui/
 │   ├── shields/
 │   ├── monsters/
-│   └── rally/
+│   ├── rally/
+│   └── items/
 │
-├── logs/                   # Rotating log files
+├── logs/                     # Rotating log files
 │
 └── windows_installers/
     └── v1/
@@ -264,6 +306,18 @@ A template PNG is missing. Re-run the capture tool and capture that element. The
 
 **Truce Agreement manager doesn't trigger**
 The bot navigates to the city, then opens your inventory to read the `Remaining Time: HH:MM:SS` green bar. Make sure `shield_icon` (the blue dome), `inventory_button`, and the `shield_item_Xh/d` templates are all captured.
+
+**Rally joiner joins but sends the wrong troop count**
+The joiner always sends exactly 1 troop. If it's sending more, your `troop_reset_button` template probably isn't matching — recapture it. The bot taps Reset first, then `+` once.
+
+**Daily Tasks panel doesn't open**
+Recapture `daily_tasks_button`. Its position varies between game versions and server types.
+
+**Royal Thief event not detected**
+The bot only acts when it can see the `royal_thief_event` banner in the Events panel. If the event isn't running, it skips silently — that's expected. If it IS running and being missed, recapture the banner template.
+
+**Stamina never restores**
+Check that `stamina_icon` is captured (gives the bot an anchor for OCR). Also verify you have stamina restore items in your inventory and that `stamina_item_small/medium/large` templates are captured for the sizes you own.
 
 **pip install failed during setup**
 Run it manually from the install folder:
