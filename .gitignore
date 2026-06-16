@@ -1,0 +1,26 @@
+# Auto-deployed external tools (adb, Tesseract) — downloaded by deploy.py
+tools/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Build artifacts
+build/
+dist/
+installer/output/
+
+# Runtime
+logs/
+screenshot_preview.png
+
+# Captured templates are user-specific (keep the folders, ignore the PNGs)
+templates/**/*.png
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp

@@ -20,6 +20,7 @@ if getattr(sys, "frozen", False):
 
 import yaml
 
+from bot import dependencies
 from bot.adb_controller import ADBController
 from bot.alliance_helper import AllianceHelper
 from bot.daily_tasks import DailyTaskManager
@@ -248,6 +249,8 @@ def main() -> None:
 
     cfg = _load_config(args.config)
     _setup_logging(cfg)
+    # Point this process at the bundled tools (adb / tesseract) deploy.py set up
+    dependencies.configure()
     EvonyBot(cfg).start()
 
 

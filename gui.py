@@ -23,6 +23,8 @@ import yaml
 if getattr(sys, "frozen", False):
     os.chdir(os.path.dirname(sys.executable))
 
+from bot import dependencies  # noqa: E402
+
 CONFIG_PATH = "config.yaml"
 PRESETS = [f"preset_{i}" for i in range(1, 6)]
 STAMINA_ITEMS = ["small", "medium", "large"]
@@ -211,6 +213,12 @@ class EvonyBotGUI(ctk.CTk):
         self.minsize(860, 580)
         self.protocol("WM_DELETE_WINDOW", self._on_close)
 
+        # Wire this process to the bundled tools (adb / tesseract) if present
+        try:
+            dependencies.configure()
+        except Exception:  # noqa: BLE001 — never let setup wiring block the GUI
+            pass
+
         self.cfg = _load_cfg()
         self._log_q: "queue.Queue[str]" = queue.Queue()
         self._bot = None
@@ -337,12 +345,13 @@ class EvonyBotGUI(ctk.CTk):
         self._tabs = ctk.CTkTabview(self)
         self._tabs.grid(row=1, column=0, sticky="nsew", padx=10, pady=(4, 0))
 
-        for t in ["Dashboard", "Shield", "Rally Joiner", "Rally Starter", "Scanner",
+        for t in ["Dashboard", "Setup", "Shield", "Rally Joiner", "Rally Starter", "Scanner",
                   "Daily Tasks", "Royal Thief", "Stamina", "Alliance", "Resources",
                   "Templates", "Settings"]:
             self._tabs.add(t)
 
         self._build_dashboard()
+        self._build_setup_tab()
         self._build_shield_tab()
         self._build_joiner_tab()
         self._build_starter_tab()
@@ -555,6 +564,136 @@ class EvonyBotGUI(ctk.CTk):
         self._en_rc_types.pack(anchor="w", padx=16, pady=(4, 0))
 
         _save_btn(f, self._save_resources)
+
+    # ── Setup tab ─────────────────────────────────────────────────────────
+
+    def _build_setup_tab(self) -> None:
+        tab = self._tabs.tab("Setup")
+        tab.grid_columnconfigure(0, weight=1)
+        tab.grid_rowconfigure(3, weight=1)
+
+        ctk.CTkLabel(
+            tab,
+            text="One-click setup. This downloads and configures everything the bot "
+                 "needs to run:\nPython packages, Android Platform Tools (adb), and "
+                 "Tesseract OCR. No manual downloads.",
+            font=ctk.CTkFont(size=12), text_color="#aaaaaa", justify="left",
+        ).grid(row=0, column=0, padx=16, pady=(12, 6), sticky="w")
+
+        # Requirement status panel
+        self._setup_status = ctk.CTkFrame(tab)
+        self._setup_status.grid(row=1, column=0, sticky="ew", padx=16, pady=(0, 8))
+        self._setup_status.grid_columnconfigure(0, weight=1)
+
+        # Action buttons
+        btn_row = ctk.CTkFrame(tab, fg_color="transparent")
+        btn_row.grid(row=2, column=0, padx=16, pady=(0, 8), sticky="w")
+        self._deploy_btn = ctk.CTkButton(
+            btn_row, text="⚙  Run Auto-Deploy", width=200,
+            fg_color="#1a5a96", hover_color="#0d3d69", command=self._run_deploy,
+        )
+        self._deploy_btn.pack(side="left", padx=(0, 10))
+        ctk.CTkButton(btn_row, text="↻  Re-check", width=120,
+                      fg_color="transparent", border_width=1,
+                      command=self._refresh_setup_status).pack(side="left")
+
+        # Live deploy output
+        self._deploy_log = ctk.CTkTextbox(
+            tab, font=ctk.CTkFont(family="Consolas", size=11), state="disabled",
+        )
+        self._deploy_log.grid(row=3, column=0, sticky="nsew", padx=16, pady=(0, 10))
+
+        self._refresh_setup_status()
+
+    def _refresh_setup_status(self) -> None:
+        for w in self._setup_status.winfo_children():
+            w.destroy()
+        try:
+            dependencies.configure()
+            status = dependencies.full_status()
+        except Exception as e:  # noqa: BLE001
+            ctk.CTkLabel(self._setup_status, text=f"Status check failed: {e}",
+                         text_color="#e74c3c").pack(anchor="w", padx=12, pady=8)
+            return
+
+        def line(label: str, ok: bool, detail: str = "") -> None:
+            row = ctk.CTkFrame(self._setup_status, fg_color="transparent")
+            row.pack(fill="x", padx=12, pady=2)
+            ctk.CTkLabel(row, text="●" if ok else "○",
+                         text_color="#2ecc71" if ok else "#e74c3c",
+                         width=20, font=ctk.CTkFont(size=13)).pack(side="left")
+            ctk.CTkLabel(row, text=f" {label}", font=_FONT, width=220,
+                         anchor="w").pack(side="left")
+            if detail:
+                ctk.CTkLabel(row, text=detail, font=ctk.CTkFont(size=10),
+                             text_color="#888888", anchor="w").pack(side="left", fill="x")
+
+        missing = [p for p, ok in status["packages"].items() if not ok]
+        line("Python packages",
+             status["packages_ok"],
+             "all installed" if status["packages_ok"] else "missing: " + ", ".join(missing))
+        line("Android Platform Tools (adb)", status["adb"]["ok"], status["adb"]["detail"])
+        line("Tesseract OCR", status["tesseract"]["ok"], status["tesseract"]["detail"])
+
+        banner = ctk.CTkFrame(self._setup_status, fg_color="transparent")
+        banner.pack(fill="x", padx=12, pady=(6, 6))
+        if status["all_ok"]:
+            ctk.CTkLabel(banner, text="✓ All requirements satisfied — the bot is ready to run.",
+                         text_color="#2ecc71", font=ctk.CTkFont(weight="bold")).pack(anchor="w")
+        else:
+            ctk.CTkLabel(banner, text="Some requirements are missing — click Run Auto-Deploy.",
+                         text_color="#e67e22", font=ctk.CTkFont(weight="bold")).pack(anchor="w")
+
+    def _run_deploy(self) -> None:
+        if getattr(self, "_deploy_thread", None) and self._deploy_thread.is_alive():
+            return
+        self._deploy_btn.configure(state="disabled", text="⚙  Deploying…")
+        self._deploy_log.configure(state="normal")
+        self._deploy_log.delete("1.0", "end")
+        self._deploy_log.configure(state="disabled")
+
+        device = None
+        if hasattr(self, "_en_device"):
+            device = self._en_device.get().strip() or None
+
+        self._deploy_thread = threading.Thread(
+            target=self._deploy_worker, args=(device,), daemon=True, name="Deploy"
+        )
+        self._deploy_thread.start()
+
+    def _deploy_worker(self, device: str | None) -> None:
+        if getattr(sys, "frozen", False):
+            cmd = [str(Path(sys.executable).parent / "deploy.exe")]
+        else:
+            cmd = [sys.executable, "deploy.py"]
+        if device:
+            cmd += ["--device", device]
+
+        try:
+            proc = subprocess.Popen(
+                cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                text=True, bufsize=1,
+            )
+            for raw in proc.stdout:  # type: ignore[union-attr]
+                self._log_q.put("[deploy] " + raw.rstrip())
+                self.after(0, lambda l=raw: self._append_deploy_log(l))
+            proc.wait()
+            self.after(0, lambda: self._append_deploy_log(
+                f"\nDeploy finished (exit {proc.returncode}).\n"))
+        except Exception as e:  # noqa: BLE001
+            self.after(0, lambda: self._append_deploy_log(f"\nDeploy error: {e}\n"))
+        finally:
+            self.after(0, self._deploy_done)
+
+    def _append_deploy_log(self, text: str) -> None:
+        self._deploy_log.configure(state="normal")
+        self._deploy_log.insert("end", text if text.endswith("\n") else text + "\n")
+        self._deploy_log.see("end")
+        self._deploy_log.configure(state="disabled")
+
+    def _deploy_done(self) -> None:
+        self._deploy_btn.configure(state="normal", text="⚙  Run Auto-Deploy")
+        self._refresh_setup_status()
 
     # ── Templates tab ─────────────────────────────────────────────────────
 
