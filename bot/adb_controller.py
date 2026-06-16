@@ -6,6 +6,8 @@ from typing import Optional, Tuple
 
 from PIL import Image
 
+from bot import dependencies
+
 logger = logging.getLogger(__name__)
 
 
@@ -14,14 +16,16 @@ class ADBController:
 
     def __init__(self, device: str = "127.0.0.1:5555"):
         self.device = device
-        self._prefix = ["adb", "-s", device]
+        # Resolve the adb executable once (bundled tools/, PATH, or well-known)
+        self._adb = dependencies.adb_path()
+        self._prefix = [self._adb, "-s", device]
 
     # ── Connection ────────────────────────────────────────────────────────
 
     def connect(self) -> bool:
         try:
             result = subprocess.run(
-                ["adb", "connect", self.device],
+                [self._adb, "connect", self.device],
                 capture_output=True, text=True, timeout=10,
             )
             ok = "connected" in result.stdout.lower()
@@ -40,7 +44,7 @@ class ADBController:
     def is_connected(self) -> bool:
         try:
             result = subprocess.run(
-                ["adb", "devices"], capture_output=True, text=True, timeout=5
+                [self._adb, "devices"], capture_output=True, text=True, timeout=5
             )
             return self.device in result.stdout
         except Exception:

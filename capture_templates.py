@@ -31,6 +31,14 @@ except ImportError:
     subprocess.run([sys.executable, "-m", "pip", "install", "Pillow"], check=True)
     from PIL import Image
 
+# Resolve the adb executable the same way the bot does (bundled tools/, PATH…)
+try:
+    from bot import dependencies as _deps
+    _deps.configure()
+    ADB = _deps.adb_path()
+except Exception:  # noqa: BLE001 — fall back to bare command if anything is off
+    ADB = "adb"
+
 
 # ─── Templates to capture ─────────────────────────────────────────────────────
 # (template_name, subdirectory, description of what to show in-game)
@@ -162,13 +170,13 @@ TEMPLATES = [
 # ─── ADB helpers ──────────────────────────────────────────────────────────────
 
 def adb_connect(device: str) -> bool:
-    r = subprocess.run(["adb", "connect", device], capture_output=True, text=True, timeout=10)
+    r = subprocess.run([ADB, "connect", device], capture_output=True, text=True, timeout=10)
     return "connected" in r.stdout.lower()
 
 
 def adb_screenshot(device: str) -> Image.Image | None:
     r = subprocess.run(
-        ["adb", "-s", device, "exec-out", "screencap", "-p"],
+        [ADB, "-s", device, "exec-out", "screencap", "-p"],
         capture_output=True, timeout=15,
     )
     if r.returncode == 0 and r.stdout:

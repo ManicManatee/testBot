@@ -1,0 +1,114 @@
+# ─────────────────────────────────────────────
+#  Evony Bot Configuration
+# ─────────────────────────────────────────────
+
+# ADB device address
+# Common emulator defaults:
+#   BlueStacks 5:  127.0.0.1:5555  (or 5565 for 2nd instance)
+#   LDPlayer:      127.0.0.1:5554
+#   MuMu Player:   127.0.0.1:7555
+#   NoxPlayer:     127.0.0.1:62001
+adb:
+  device: "127.0.0.1:5555"
+
+# ─── Truce Agreement (Shield) Manager ────────
+# In-game name: "Truce Agreement"  (8 Hour / 24 Hour / 3 Day / 7 Day)
+# Timer is read from the Use Item panel: "Remaining Time: HH:MM:SS"
+shield:
+  enabled: true
+  check_interval_minutes: 15       # How often to check Truce Agreement status
+  refresh_threshold_minutes: 60    # Renew when less than this many minutes remain
+  preferred_shields:               # Try these in order (template names match shield_item_Xh / Xd)
+    - "8h"
+    - "24h"
+    - "3d"
+    - "7d"
+
+# ─── Rally Joiner ─────────────────────────────
+rally_joiner:
+  enabled: true
+  check_interval_seconds: 10       # How often to scan for rally invites
+  march_preset: "preset_1"         # preset_1 … preset_5
+  # Per-type filters — set enabled: false to skip that type entirely
+  filters:
+    regular:   {enabled: true,  min_level: 1,  max_level: 23}
+    hydra:     {enabled: true,  min_level: 1,  max_level: 6}
+    ymir:      {enabled: true,  min_level: 1,  max_level: 6}
+    cerberus:  {enabled: true,  min_level: 1,  max_level: 5}
+    golem:     {enabled: true,  min_level: 1,  max_level: 7}
+    witch:     {enabled: true,  min_level: 1,  max_level: 7}
+    summoned:  {enabled: false, min_level: 1,  max_level: 99}
+
+# ─── Rally Starter ────────────────────────────
+rally_starter:
+  enabled: true
+  march_preset: "preset_1"
+  rally_time_minutes: 10           # How long to keep the rally open
+  auto_target_from_scanner: true   # Use monsters found by the scanner
+  troop_config:
+    use_preset: true
+    preset_number: 1
+
+# ─── Monster Scanner ──────────────────────────
+monster_scanner:
+  enabled: true
+  scan_interval_minutes: 30        # How often to scan the world map
+  auto_share: true                 # Post finds to alliance chat
+  max_share_per_scan: 5
+  # Per-type filters — mirror the rally_joiner filters or set independently
+  filters:
+    regular:   {enabled: true,  min_level: 1,  max_level: 23}
+    hydra:     {enabled: true,  min_level: 1,  max_level: 6}
+    ymir:      {enabled: true,  min_level: 1,  max_level: 6}
+    cerberus:  {enabled: true,  min_level: 1,  max_level: 5}
+    golem:     {enabled: true,  min_level: 1,  max_level: 7}
+    witch:     {enabled: true,  min_level: 1,  max_level: 7}
+    summoned:  {enabled: true,  min_level: 1,  max_level: 99}
+
+# ─── Daily Tasks ──────────────────────────────
+daily_tasks:
+  enabled: true
+  check_interval_minutes: 60       # How often to open the Daily Tasks panel
+  claim_only: true                  # false = also tap "Go" on incomplete tasks
+
+# ─── Royal Thief ──────────────────────────────
+royal_thief:
+  enabled: true
+  check_interval_minutes: 30       # How often to check for an active Royal Thief event
+  invite_active_only: true          # Only invite players shown as online/active
+  max_invites_per_run: 5            # Cap per run to avoid spamming
+
+# ─── Stamina Manager ──────────────────────────
+stamina:
+  enabled: true
+  check_interval_minutes: 15       # How often to read the stamina counter
+  min_stamina: 10                   # Use a restore item when stamina drops below this
+  preferred_items:
+    - "small"
+    - "medium"
+    - "large"
+
+# ─── Alliance Helper ──────────────────────────
+alliance_helper:
+  enabled: true
+  check_interval_minutes: 20       # How often to check for pending help requests
+
+# ─── Resource Collector ───────────────────────
+# Sends gathering marches to resource tiles on the world map.
+resource_collector:
+  enabled: true
+  check_interval_minutes: 30       # How often to check for open march slots
+  resource_types:                  # Which tile types to gather
+    - "food"
+    - "wood"
+    - "stone"
+    - "iron"
+  march_preset: "preset_2"         # Preset to use for gathering troops
+  max_marches_per_run: 5           # Max gathering marches to send per check
+  pan_map: true                    # Pan the map to find more tiles after the visible ones
+
+# ─── Logging ──────────────────────────────────
+logging:
+  level: "INFO"                    # DEBUG | INFO | WARNING | ERROR
+  log_file: "logs/evony_bot.log"
+  max_file_size_mb: 10

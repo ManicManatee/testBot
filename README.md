@@ -30,33 +30,57 @@ All features are configurable — enable only what you want, tune the intervals,
 
 A dark-themed control panel (`EvonyBot.exe`) with live log output, per-feature toggles, stat cards, and a template status panel. No command line required unless you're into that kind of thing.
 
-**Tabs:** Dashboard · Shield · Rally Joiner · Rally Starter · Scanner · Daily Tasks · Royal Thief · Stamina · Alliance · Resources · Templates · Settings
+**Tabs:** Dashboard · **Setup** · Shield · Rally Joiner · Rally Starter · Scanner · Daily Tasks · Royal Thief · Stamina · Alliance · Resources · Templates · Settings
+
+The **Setup** tab runs the whole auto-deploy for you with a single button and shows a live ✓/✗ status for every requirement — no terminal required.
 
 **Dashboard stat cards:** Shield timer · Rallies Joined · Monsters Found · Uptime · Tasks Claimed · RT Invites Sent · Alliance Helps · Resources Runs
 
 ---
 
-## 📋 Prerequisites
+## ⚡ Quick Start — One-Command Setup (recommended)
 
-Before installing the bot you need two free tools. The installer will remind you, but here they are:
+You don't need to hunt down ADB, edit PATH, or install Tesseract by hand. The auto-deploy does all of it:
 
-### 1. Android Platform Tools (ADB)
-The bot talks to your emulator over ADB.
+- **Windows:** double-click **`setup.bat`**
+- **Linux / macOS:** `./setup.sh`
+- **Any OS, manually:** `python deploy.py`
+
+That single command will:
+
+1. Install all required Python packages (`pip install -r requirements.txt`)
+2. Download **Android Platform Tools (adb)** into a local `tools/` folder
+3. Install **Tesseract OCR** — silently on Windows, via your package manager on Linux/macOS
+4. Record the resolved tool paths in `tools/tools.json` and **configure the bot to use them automatically** (no PATH edits, no pytesseract config)
+5. Create your `config.yaml` and the `templates/` + `logs/` folders
+6. Verify every requirement and print a green/red status report
+
+Re-running is safe — anything already working is skipped. Just want to see what's missing? `python deploy.py --check`.
+
+> Prefer clicking? The GUI's **Setup** tab has a **⚙ Run Auto-Deploy** button that does the same thing with live output and a status panel.
+
+When it finishes: `python gui.py` (or `python main.py` for headless).
+
+---
+
+## 📋 Prerequisites (handled for you)
+
+The auto-deploy installs everything below automatically — this section is only for manual setup or troubleshooting.
+
+### 1. Android Platform Tools (ADB) — *auto-installed*
+The bot talks to your emulator over ADB. `deploy.py` downloads this into `tools/platform-tools/` and points the bot at it. To do it by hand instead:
 
 1. Download from [developer.android.com/tools/releases/platform-tools](https://developer.android.com/tools/releases/platform-tools)
 2. Extract the zip anywhere (e.g. `C:\platform-tools\`)
-3. Add that folder to your **system PATH**
-   - Search → "Edit the system environment variables" → Environment Variables → Path → New
-4. Open a new terminal and verify: `adb version`
+3. Add that folder to your **system PATH**, then verify: `adb version`
 
-### 2. Tesseract OCR
-Reads text from the screen (shield timers, monster coordinates, stamina counters, etc.).
+### 2. Tesseract OCR — *auto-installed*
+Reads text from the screen (shield timers, monster coordinates, stamina counters, etc.). `deploy.py` installs it into `tools/Tesseract-OCR/` on Windows (or via apt/brew on Linux/macOS) and wires up pytesseract for you. To do it by hand instead:
 
 1. Download the Windows installer from [github.com/UB-Mannheim/tesseract/wiki](https://github.com/UB-Mannheim/tesseract/wiki)
 2. Run it — the default install path (`C:\Program Files\Tesseract-OCR\`) is fine
-3. No PATH setup needed; pytesseract finds it automatically
 
-### 3. A Supported Android Emulator
+### 3. A Supported Android Emulator — *you provide this*
 The bot connects to your emulator via ADB. Any of these work:
 
 | Emulator | Default ADB address |
@@ -84,15 +108,15 @@ The bot connects to your emulator via ADB. Any of these work:
 
 ---
 
-### Option B — Manual (Python already installed)
+### Option B — From source (Python already installed)
 
 ```bash
 # 1. Clone the repo
 git clone https://github.com/manicmanatee/testbot.git
 cd testbot
 
-# 2. Install dependencies
-pip install -r requirements.txt
+# 2. Auto-deploy everything (packages + adb + Tesseract + config)
+python deploy.py
 
 # 3. Launch the GUI
 python gui.py
@@ -245,13 +269,17 @@ Logs go to both the console and `logs/evony_bot.log`.
 
 ```
 EvonyBot/
+├── deploy.py                 # ⚡ Auto-deploy: installs & configures everything
+├── setup.bat / setup.sh      # One-click wrappers around deploy.py
 ├── gui.py                    # GUI manager (the thing you launch)
 ├── main.py                   # Headless CLI entry point
 ├── capture_templates.py      # Template capture wizard
 ├── config.yaml               # All your settings live here
+├── config.example.yaml       # Pristine defaults (deploy.py copies this)
 ├── requirements.txt          # Python dependencies
 │
 ├── bot/
+│   ├── dependencies.py       # Resolves & configures adb / tesseract paths
 │   ├── adb_controller.py     # ADB: screenshot, tap, swipe, type
 │   ├── screen_reader.py      # OpenCV template matching + OCR
 │   ├── navigator.py          # Screen-state machine (city/map/chat/inventory)
@@ -263,13 +291,19 @@ EvonyBot/
 │   ├── royal_thief.py        # Send Royal Thief event invites
 │   ├── stamina_manager.py    # Auto-restore stamina from inventory
 │   ├── alliance_helper.py    # Help All alliance requests
-│   └── resource_collector.py # Harvest resource buildings
+│   └── resource_collector.py # Send gathering marches to map tiles
+│
+├── tools/                    # Auto-deployed adb + Tesseract live here
+│   ├── platform-tools/       # adb (downloaded by deploy.py)
+│   ├── Tesseract-OCR/        # Tesseract (installed by deploy.py)
+│   └── tools.json            # Resolved tool paths
 │
 ├── templates/                # Your captured UI screenshots go here
 │   ├── ui/
 │   ├── shields/
 │   ├── monsters/
 │   ├── rally/
+│   ├── resources/
 │   └── items/
 │
 ├── logs/                     # Rotating log files
@@ -306,8 +340,13 @@ makensis EvonyBot_Setup.nsi
 
 ## ❓ Troubleshooting
 
+**Run `python deploy.py --check` first.** It prints a green/red report of every requirement and is the fastest way to see what's wrong.
+
+**Auto-deploy couldn't download a tool**
+A firewall or proxy may be blocking the download. The deploy prints the direct URLs — grab the file manually, or install adb/Tesseract by hand (see Prerequisites). The bot also detects tools you install yourself: anything on your PATH or in the standard install locations is picked up automatically.
+
 **"adb not found"**
-Make sure Android Platform Tools is downloaded and the folder is in your PATH. Restart your terminal after adding it.
+Run `python deploy.py` to auto-install it, or download Android Platform Tools and add the folder to your PATH (restart your terminal afterward). The bot checks `tools/platform-tools/`, your PATH, and well-known SDK locations in that order.
 
 **"Template not found" warnings in the log**
 A template PNG is missing. Re-run the capture tool and capture that element. The Templates tab in the GUI shows which ones are missing (red ○).
