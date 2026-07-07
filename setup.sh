@@ -24,8 +24,8 @@ echo "Using: $($PY --version)"
 echo
 
 cd "$(dirname "$0")"
-"$PY" deploy.py "$@"
-RC=$?
+RC=0
+"$PY" deploy.py "$@" || RC=$?
 
 echo
 if [ "$RC" -eq 0 ]; then

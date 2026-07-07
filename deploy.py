@@ -40,11 +40,18 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-# Ensure we can import the bot package whether run from source or a checkout
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-from bot import dependencies as deps  # noqa: E402
+# When running as a PyInstaller-frozen exe, resolve everything relative to the
+# executable's folder (Python packages are already bundled in that case).
+FROZEN = getattr(sys, "frozen", False)
+if FROZEN:
+    REPO_ROOT = Path(sys.executable).resolve().parent
+    os.chdir(REPO_ROOT)
+else:
+    REPO_ROOT = Path(__file__).resolve().parent
+    # Ensure we can import the bot package when run from any directory
+    sys.path.insert(0, str(REPO_ROOT))
 
-REPO_ROOT = Path(__file__).resolve().parent
+from bot import dependencies as deps  # noqa: E402
 
 # ── Download sources ──────────────────────────────────────────────────────────
 
@@ -125,6 +132,10 @@ def download(url: str, dest: Path) -> bool:
 
 def install_pip(total: int) -> bool:
     step(1, total, "Installing Python packages")
+    if FROZEN:
+        # Packaged exe: all Python packages are bundled inside the executable.
+        ok("Running from packaged exe — Python packages already bundled")
+        return True
     req = REPO_ROOT / "requirements.txt"
     if not req.exists():
         fail("requirements.txt not found")
@@ -210,11 +221,14 @@ def _install_tesseract_windows() -> bool:
         _tesseract_manual_hint()
         return False
 
-    # NSIS silent install: /S = silent, /D=<dir> must be last and unquoted
+    # NSIS silent install: /S = silent, /D=<dir> must be LAST and UNQUOTED —
+    # even when the path contains spaces.  subprocess list form would wrap a
+    # space-containing /D= arg in quotes and break NSIS parsing, so on Windows
+    # we build the command line as a raw string instead.
     print("  Running silent installer…")
     try:
         subprocess.run(
-            [str(installer), "/S", f"/D={target_dir}"],
+            f'"{installer}" /S /D={target_dir}',
             check=True, timeout=600,
         )
     except (subprocess.CalledProcessError, subprocess.TimeoutExpired) as e:

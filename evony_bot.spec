@@ -1,11 +1,12 @@
 # -*- mode: python ; coding: utf-8 -*-
 #
 # PyInstaller spec (compatible with PyInstaller 6+)
-# Produces three executables in dist/evony_bot/:
+# Produces four executables in dist/evony_bot/:
 #
 #   EvonyBot.exe            — GUI manager  (users double-click this)
 #   evony_bot.exe           — headless CLI bot
 #   capture_templates.exe   — one-time template capture wizard
+#   deploy.exe              — auto-installs adb + Tesseract (GUI Setup tab runs this)
 #
 # Build:  python build.py
 #     or: pyinstaller evony_bot.spec --noconfirm
@@ -16,7 +17,8 @@ from PyInstaller.utils.hooks import collect_data_files
 _ctk_datas = collect_data_files("customtkinter", include_py_files=False)
 
 _shared_datas = [
-    ("config.yaml", "."),       # default config placed next to the exe
+    ("config.yaml", "."),          # default config placed next to the exe
+    ("config.example.yaml", "."),  # pristine defaults (deploy.py scaffolds from this)
     ("templates",   "templates"),  # empty subdirs; user fills these in
 ] + _ctk_datas
 
@@ -97,13 +99,36 @@ exe_cap = EXE(
     icon=None,
 )
 
+# ── 4.  Auto-deploy tool (installs adb + Tesseract into tools/) ──────────────
+# The GUI's Setup tab launches this as deploy.exe when frozen; deploy.py
+# itself skips the pip step in frozen mode since packages are bundled.
+
+dep = Analysis(
+    ["deploy.py"],
+    datas=_shared_datas,
+    hiddenimports=_hidden,
+    excludes=_no_gui_excludes,
+)
+pyz_dep = PYZ(dep.pure)
+exe_dep = EXE(
+    pyz_dep, dep.scripts, [],
+    exclude_binaries=True,
+    name="deploy",
+    console=True,
+    upx=True,
+    debug=False,
+    strip=False,
+    icon=None,
+)
+
 # ── Combined output directory ─────────────────────────────────────────────────
-# All three exes share dist/evony_bot/ — PyInstaller deduplicates shared DLLs.
+# All four exes share dist/evony_bot/ — PyInstaller deduplicates shared DLLs.
 
 COLLECT(
     exe_gui,  gui.binaries,  gui.zipfiles,  gui.datas,
     exe_cli,  cli.binaries,  cli.zipfiles,  cli.datas,
     exe_cap,  cap.binaries,  cap.zipfiles,  cap.datas,
+    exe_dep,  dep.binaries,  dep.zipfiles,  dep.datas,
     name="evony_bot",
     upx=True,
     strip=False,

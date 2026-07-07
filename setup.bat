@@ -39,7 +39,7 @@ echo.
 if "%RC%"=="0" (
     echo  Setup complete. Launch the bot with:  %PY% gui.py
 ) else (
-    echo  Setup reported problems (exit %RC%). See the messages above.
+    echo  Setup reported problems - exit code %RC%. See the messages above.
 )
 echo.
 pause

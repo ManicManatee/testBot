@@ -96,15 +96,15 @@ The bot connects to your emulator via ADB. Any of these work:
 
 ### Option A — Windows Installer (recommended)
 
-1. Grab `EvonyBot_Setup_v1.0.0.exe` from [`windows_installers/v1/`](windows_installers/v1/)
+1. Grab `EvonyBot_Setup_v1.1.0.exe` from [`windows_installers/v2/`](windows_installers/v2/)
 2. Run it, click through the wizard
 3. The installer will:
    - Copy all bot files to `C:\Program Files\EvonyBot\` (or wherever you choose)
-   - Detect your Python installation and run `pip install -r requirements.txt` automatically
-   - Create Start Menu shortcuts for the GUI, CLI, and template capture tool
+   - Detect your Python installation and run the **full auto-deploy** — Python packages, ADB, and Tesseract OCR are all installed and configured for you
+   - Create Start Menu shortcuts for the GUI, CLI, template capture tool, and a "Re-run Setup" entry
 4. Done — launch **Evony Bot** from the Start Menu
 
-> **Note:** The installer needs Python 3.10+ already on your machine. If it's not found, it'll tell you and give you the link. Python is free, takes two minutes.
+> **Note:** The installer needs Python 3.10+ already on your machine. If it's not found, it'll tell you and give you the link — install Python, then use the **Re-run Setup** Start Menu shortcut (or the GUI's Setup tab) to finish deploying the requirements.
 
 ---
 
@@ -276,7 +276,8 @@ EvonyBot/
 ├── capture_templates.py      # Template capture wizard
 ├── config.yaml               # All your settings live here
 ├── config.example.yaml       # Pristine defaults (deploy.py copies this)
-├── requirements.txt          # Python dependencies
+├── requirements.txt          # Runtime Python dependencies
+├── requirements-build.txt    # Build-only tools (PyInstaller) — users skip this
 │
 ├── bot/
 │   ├── dependencies.py       # Resolves & configures adb / tesseract paths
@@ -309,8 +310,10 @@ EvonyBot/
 ├── logs/                     # Rotating log files
 │
 └── windows_installers/
-    └── v1/
-        └── EvonyBot_Setup_v1.0.0.exe
+    ├── v1/
+    │   └── EvonyBot_Setup_v1.0.0.exe
+    └── v2/
+        └── EvonyBot_Setup_v1.1.0.exe   # ← current (runs the auto-deploy)
 ```
 
 ---
@@ -321,7 +324,7 @@ If you want to rebuild the installer after making changes:
 
 **On Windows:**
 ```bash
-pip install -r requirements.txt
+pip install -r requirements-build.txt   # runtime deps + PyInstaller
 choco install innosetup upx -y
 python build.py --installer
 # → installer/output/EvonyBot_Setup_vX.Y.Z.exe
@@ -330,7 +333,7 @@ python build.py --installer
 **Via GitHub Actions (any OS):**
 Go to **Actions → Build Windows Installer → Run workflow**, enter a version number, and download the artifact when the job finishes. Pushing a `v*` tag triggers a full GitHub Release automatically.
 
-**On Linux (what built this v1):**
+**On Linux (what built the installers in `windows_installers/`):**
 ```bash
 apt install nsis
 makensis EvonyBot_Setup.nsi

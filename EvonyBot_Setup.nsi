@@ -11,7 +11,7 @@
 
 ; ── Metadata ──────────────────────────────────────────────────────────────────
 !define APP_NAME       "Evony Bot"
-!define APP_VERSION    "1.0.0"
+!define APP_VERSION    "1.1.0"
 !define APP_PUBLISHER  "EvonyBot"
 !define REG_APP        "Software\EvonyBot"
 !define REG_UNINSTALL  "Software\Microsoft\Windows\CurrentVersion\Uninstall\EvonyBot"
@@ -26,7 +26,7 @@ ShowInstDetails show
 ShowUninstDetails show
 
 ; ── Version block (visible in Windows → Properties → Details) ─────────────────
-VIProductVersion "1.0.0.0"
+VIProductVersion "1.1.0.0"
 VIAddVersionKey /LANG=0 "ProductName"     "${APP_NAME}"
 VIAddVersionKey /LANG=0 "ProductVersion"  "${APP_VERSION}"
 VIAddVersionKey /LANG=0 "FileVersion"     "${APP_VERSION}"
@@ -108,7 +108,9 @@ Section "Core Files" SecCore
   File "main.py"
   File "gui.py"
   File "capture_templates.py"
+  File "deploy.py"
   File "requirements.txt"
+  File "config.example.yaml"
 
   ; config.yaml  — only install if absent (preserve edits on reinstall)
   ${IfNot} ${FileExists} "$INSTDIR\config.yaml"
@@ -117,13 +119,15 @@ Section "Core Files" SecCore
 
   ; ── bot package ──────────────────────────────────────────────────────────
   SetOutPath "$INSTDIR\bot"
-  File /r "bot\"
+  File /x "__pycache__" /x "*.pyc" "bot\*.py"
 
   ; ── Empty template folders (user fills via Capture Templates tool) ────────
   CreateDirectory "$INSTDIR\templates\ui"
   CreateDirectory "$INSTDIR\templates\shields"
   CreateDirectory "$INSTDIR\templates\monsters"
   CreateDirectory "$INSTDIR\templates\rally"
+  CreateDirectory "$INSTDIR\templates\resources"
+  CreateDirectory "$INSTDIR\templates\items"
   CreateDirectory "$INSTDIR\logs"
 
   SetOutPath "$INSTDIR"
@@ -152,30 +156,45 @@ Section "Core Files" SecCore
   FileWrite $0 "pause$\r$\n"
   FileClose $0
 
-  ; ── Install Python dependencies ───────────────────────────────────────────
+  ; ── Re-run setup launcher (auto-deploy requirements again) ────────────────
+  FileOpen  $0 "$INSTDIR\run_setup.bat" w
+  FileWrite $0 "@echo off$\r$\n"
+  FileWrite $0 "cd /d $\"%~dp0$\"$\r$\n"
+  FileWrite $0 "python deploy.py$\r$\n"
+  FileWrite $0 "pause$\r$\n"
+  FileClose $0
+
+  ; ── Auto-deploy all requirements ──────────────────────────────────────────
+  ;   deploy.py installs the Python packages, downloads Android Platform
+  ;   Tools (adb) into tools\, silently installs Tesseract OCR, and records
+  ;   the resolved paths in tools\tools.json.  The installer runs elevated,
+  ;   so the Tesseract child installer inherits admin rights.
   DetailPrint "Searching for Python..."
   Call FindPython
 
   ${If} $R0 == ""
-    DetailPrint "Python not found — skipping pip install."
+    DetailPrint "Python not found — skipping automatic requirement deployment."
     MessageBox MB_OK|MB_ICONEXCLAMATION \
       "Python 3.10 or later was not found.$\n$\n\
-      After installing Python from https://www.python.org/downloads/$\n\
-      open a terminal in$\n  $INSTDIR$\nand run:$\n$\n\
-      pip install -r requirements.txt"
+      Install Python from https://www.python.org/downloads/$\n\
+      (tick 'Add Python to PATH'), then run setup:$\n$\n\
+      double-click deploy.py in$\n  $INSTDIR$\n\
+      or open a terminal there and run:  python deploy.py"
   ${Else}
     DetailPrint "Python: $R0"
-    DetailPrint "Running pip install -r requirements.txt ..."
-    nsExec::ExecToLog '"$R0" -m pip install -r "$INSTDIR\requirements.txt" --quiet'
+    DetailPrint "Running automated requirement deployment (deploy.py)..."
+    DetailPrint "This installs pip packages, adb, and Tesseract OCR — please wait."
+    nsExec::ExecToLog '"$R0" "$INSTDIR\deploy.py"'
     Pop $0
     ${If} $0 == 0
-      DetailPrint "All Python packages installed successfully."
+      DetailPrint "All requirements deployed and configured successfully."
     ${Else}
-      DetailPrint "pip returned code $0 — see above for details."
+      DetailPrint "deploy.py returned code $0 — see log above."
       MessageBox MB_OK|MB_ICONEXCLAMATION \
-        "One or more packages failed to install (pip exit $0).$\n\
-        Check the installer log, or run manually:$\n$\n\
-        pip install -r $\"$INSTDIR\requirements.txt$\""
+        "Automatic requirement deployment reported a problem (exit $0).$\n$\n\
+        You can re-run it any time:$\n\
+        • from the GUI:  Setup tab → Run Auto-Deploy$\n\
+        • from a terminal in $INSTDIR:  python deploy.py"
     ${EndIf}
   ${EndIf}
 
@@ -205,6 +224,9 @@ Section "Core Files" SecCore
   CreateShortcut "$SMPROGRAMS\${APP_NAME}\Evony Bot (CLI).lnk" \
                  "$INSTDIR\launch_cli.bat"
 
+  CreateShortcut "$SMPROGRAMS\${APP_NAME}\Re-run Setup.lnk" \
+                 "$INSTDIR\run_setup.bat"
+
   CreateShortcut "$SMPROGRAMS\${APP_NAME}\Edit Config.lnk" \
                  "notepad.exe" '"$INSTDIR\config.yaml"'
 
@@ -224,17 +246,22 @@ Section "Uninstall"
   Delete "$INSTDIR\main.py"
   Delete "$INSTDIR\gui.py"
   Delete "$INSTDIR\capture_templates.py"
+  Delete "$INSTDIR\deploy.py"
   Delete "$INSTDIR\requirements.txt"
+  Delete "$INSTDIR\config.example.yaml"
 
   ; Launchers
   Delete "$INSTDIR\launch_gui.vbs"
   Delete "$INSTDIR\launch_cli.bat"
   Delete "$INSTDIR\capture_templates.bat"
+  Delete "$INSTDIR\run_setup.bat"
   Delete "$INSTDIR\uninstall.exe"
 
-  ; Directories (bot + logs — user's templates + config are preserved)
+  ; Directories (bot + logs + auto-deployed tools —
+  ;              user's templates + config are preserved)
   RMDir /r "$INSTDIR\bot"
   RMDir /r "$INSTDIR\logs"
+  RMDir /r "$INSTDIR\tools"
   RMDir    "$INSTDIR"       ; only removes if empty
 
   ; Shortcuts

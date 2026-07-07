@@ -1,0 +1,4 @@
+# Build-time tools only — NOT needed to run the bot.
+# Used by build.py / GitHub Actions to package the Windows executables.
+-r requirements.txt
+pyinstaller>=6.0

@@ -38,8 +38,8 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install Python dependencies
-        run: pip install -r requirements.txt
+      - name: Install Python dependencies (runtime + build tools)
+        run: pip install -r requirements-build.txt
 
       # 3 ── Native tools
       - name: Install UPX (exe compression)
@@ -83,7 +83,7 @@ jobs:
       - name: Verify PyInstaller output
         shell: pwsh
         run: |
-          $required = @("EvonyBot.exe", "evony_bot.exe", "capture_templates.exe")
+          $required = @("EvonyBot.exe", "evony_bot.exe", "capture_templates.exe", "deploy.exe")
           foreach ($f in $required) {
             $p = "dist\evony_bot\$f"
             if (-not (Test-Path $p)) { throw "Missing: $p" }

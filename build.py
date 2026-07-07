@@ -32,8 +32,12 @@ def ensure_pyinstaller() -> None:
     try:
         import PyInstaller  # noqa: F401
     except ImportError:
-        print("PyInstaller not found — installing…")
-        run([sys.executable, "-m", "pip", "install", "pyinstaller"])
+        print("PyInstaller not found — installing build requirements…")
+        req = Path("requirements-build.txt")
+        if req.exists():
+            run([sys.executable, "-m", "pip", "install", "-r", str(req)])
+        else:
+            run([sys.executable, "-m", "pip", "install", "pyinstaller"])
 
 
 def clean() -> None:
@@ -98,6 +102,7 @@ def main() -> None:
     print(f"\n✓  GUI launcher:       {dist / 'EvonyBot.exe'}")
     print(f"   CLI bot:            {exe_path}")
     print(f"   Capture-templates:  {dist / 'capture_templates.exe'}")
+    print(f"   Auto-deploy tool:   {dist / 'deploy.exe'}")
     print(f"\n   → Double-click EvonyBot.exe to open the management GUI.")
 
     # ── Step 3: installer (optional) ──────────────────────────────────────
@@ -127,9 +132,8 @@ def main() -> None:
     print(f"\n✓  Installer:  {installer_out}")
     print(
         "\nDistribute that single .exe file.\n"
-        "Recipients must also install:\n"
-        "  • Android Platform Tools (adb.exe in PATH)\n"
-        "  • Tesseract OCR  https://github.com/UB-Mannheim/tesseract/wiki"
+        "ADB and Tesseract OCR are installed automatically at the end of the\n"
+        "wizard (the 'Run automated setup' checkbox runs the bundled deploy.exe)."
     )
 
 

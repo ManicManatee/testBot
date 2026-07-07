@@ -5,5 +5,5 @@ PyYAML>=6.0
 pytesseract>=0.3.10
 customtkinter>=5.2.0
 
-# Build tools (only needed to package the bot as a Windows exe / installer)
-pyinstaller>=6.0
+# Build tools (PyInstaller etc.) moved to requirements-build.txt —
+# end users running the bot don't need them.
